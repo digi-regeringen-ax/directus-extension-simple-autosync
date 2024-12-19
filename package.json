@@ -32,7 +32,7 @@
 		"dev": "directus-extension build -w --no-minify",
 		"link": "directus-extension link",
 		"add": "directus-extension add",
-		"prepare": "npm run build"
+		"prepare": "./node_modules/.bin/directus-extension build"
 	},
 	"devDependencies": {
 		"@directus/extensions-sdk": "12.1.4"
