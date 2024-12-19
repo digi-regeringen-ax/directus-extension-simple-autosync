@@ -32,7 +32,7 @@
 				"source": "src/index.js"
 			}
 		],
-		"host": "^10.10.0"
+		"host": "^11.3.2"
 	},
 	"scripts": {
 		"build": "directus-extension build",
