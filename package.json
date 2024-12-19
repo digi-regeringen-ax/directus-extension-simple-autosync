@@ -1,6 +1,6 @@
 {
 	"name": "directus-extension-simple-autosync",
-	"description": "Please enter a description for your extension",
+	"description": "An extension for pulling and pushing snapshot configurations between Directus environments.",
 	"icon": "extension",
 	"version": "1.0.0",
 	"keywords": [
@@ -12,6 +12,9 @@
 	"files": [
 		"dist"
 	],
+	"engines": {
+		"node": "18.20.2"
+	},
 	"directus:extension": {
 		"type": "bundle",
 		"path": {
@@ -21,7 +24,7 @@
 		"entries": [
 			{
 				"type": "hook",
-				"name": "apply",
+				"name": "pullpush",
 				"source": "src/index.js"
 			}
 		],
@@ -31,8 +34,7 @@
 		"build": "directus-extension build",
 		"dev": "directus-extension build -w --no-minify",
 		"link": "directus-extension link",
-		"add": "directus-extension add",
-		"prepare": "./node_modules/.bin/directus-extension build"
+		"add": "directus-extension add"
 	},
 	"devDependencies": {
 		"@directus/extensions-sdk": "12.1.4"
