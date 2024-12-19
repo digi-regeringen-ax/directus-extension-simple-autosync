@@ -8,6 +8,10 @@
 		"directus-extension",
 		"directus-extension-bundle"
 	],
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/digi-regeringen-ax/directus-extension-simple-autosync"
+	},
 	"type": "module",
 	"files": [
 		"dist"
