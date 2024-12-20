@@ -1,46 +1,62 @@
 {
-	"name": "directus-extension-simple-autosync",
-	"description": "An extension for pulling and pushing snapshot configurations between Directus environments.",
-	"icon": "extension",
-	"version": "1.0.0",
-	"keywords": [
-		"directus",
-		"directus-extension",
-		"directus-extension-bundle"
-	],
-	"repository": {
-		"type": "git",
-		"url": "https://github.com/digi-regeringen-ax/directus-extension-simple-autosync"
-	},
-	"type": "module",
-	"files": [
-		"dist"
-	],
-	"engines": {
-		"node": "18.20.2"
-	},
-	"directus:extension": {
-		"type": "bundle",
-		"path": {
-			"app": "dist/app.js",
-			"api": "dist/api.js"
-		},
-		"entries": [
-			{
-				"type": "hook",
-				"name": "pullpush",
-				"source": "src/index.js"
-			}
-		],
-		"host": "^11.3.2"
-	},
-	"scripts": {
-		"build": "directus-extension build",
-		"dev": "directus-extension build -w --no-minify",
-		"link": "directus-extension link",
-		"add": "directus-extension add"
-	},
-	"devDependencies": {
-		"@directus/extensions-sdk": "12.1.4"
-	}
+  "name": "directus-extension-simple-autosync",
+  "description": "An extension for pulling and pushing snapshot configurations between Directus environments.",
+  "icon": "extension",
+  "version": "1.1.0",
+  "keywords": [
+    "directus",
+    "directus-extension",
+    "directus-extension-bundle"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/digi-regeringen-ax/directus-extension-simple-autosync"
+  },
+  "type": "module",
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": "20.18.0"
+  },
+  "directus:extension": {
+    "type": "bundle",
+    "path": {
+      "app": "dist/app.js",
+      "api": "dist/api.js"
+    },
+    "entries": [
+      {
+        "type": "endpoint",
+        "name": "Endpoints",
+        "source": "src/endpoints/index.js"
+      },
+      {
+        "type": "hook",
+        "name": "Auto",
+        "source": "src/hooks/auto.js"
+      },
+      {
+        "type": "module",
+        "name": "Manual",
+        "source": "src/modules/manual.js"
+      }
+    ],
+    "host": "^11.0.0"
+  },
+  "scripts": {
+    "build": "directus-extension build",
+    "build:dev": "directus-extension build --no-minify",
+    "dev": "directus-extension build -w --no-minify",
+    "link": "directus-extension link",
+    "add": "directus-extension add"
+  },
+  "devDependencies": {
+    "@directus/extensions-sdk": "12.1.4",
+    "lodash": "^4.17.21"
+  },
+  "dependencies": {
+    "@directus/composables": "^11.1.5",
+    "vue": "^3.5.13"
+  }
 }

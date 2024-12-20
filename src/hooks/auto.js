@@ -1,12 +1,11 @@
 import { defineHook } from "@directus/extensions-sdk";
 import fs from "node:fs";
+import * as helpers from "../helpers";
 
 export default defineHook(({ init, action }, { services }) => {
   const { SchemaService } = services;
 
-  const defaultFilePath = `/directus/autosync-config/snapshot.json`;
-  const fullFilePath = process.env.AUTOSYNC_FILE_PATH || defaultFilePath;
-
+  // Fake admin since this is an internal process
   const accountability = { admin: true };
   const _schemaService = new SchemaService({ accountability });
 
@@ -27,7 +26,7 @@ export default defineHook(({ init, action }, { services }) => {
     "webhooks",
   ];
   const affectingActions = ["create", "update", "delete"];
-  const shouldAutoPull = isStringTruthy(process.env.AUTOSYNC_PULL);
+  const shouldAutoPull = helpers.isStringTruthy(process.env.AUTOSYNC_PULL);
   if (shouldAutoPull) {
     affectingModules.forEach((moduleName) => {
       affectingActions.forEach((actionName) => {
@@ -39,7 +38,7 @@ export default defineHook(({ init, action }, { services }) => {
     });
   }
 
-  const shouldAutoPush = isStringTruthy(process.env.AUTOSYNC_PUSH);
+  const shouldAutoPush = helpers.isStringTruthy(process.env.AUTOSYNC_PUSH);
   if (shouldAutoPush) {
     action("server.start", async (meta) => {
       console.log(`simple-autosync: push action triggered!`, meta.event);
@@ -49,16 +48,7 @@ export default defineHook(({ init, action }, { services }) => {
 
   async function doPush() {
     try {
-      const snapshot = fs.readFileSync(fullFilePath);
-      const object = JSON.parse(snapshot);
-
-      const currentSnapshot = await _schemaService.snapshot();
-
-      const diff = await _schemaService.diff(object, { currentSnapshot });
-
-      const { hash } = _schemaService.getHashedSnapshot(currentSnapshot);
-
-      await _schemaService.apply({ hash, diff });
+      await helpers.pushSnapshot(_schemaService, false);
     } catch (e) {
       console.log("simple-autosync: doPush error!", e);
     }
@@ -66,18 +56,11 @@ export default defineHook(({ init, action }, { services }) => {
 
   async function doPull() {
     try {
-      const snapshot = await _schemaService.snapshot();
-      const json = JSON.stringify(snapshot, null, 4);
-      fs.writeFileSync(fullFilePath, json, { flag: "w" });
+      await helpers.pullSnapshot(_schemaService);
     } catch (e) {
       console.log("simple-autosync: doPull error!", e);
     }
   }
 
-  function isStringTruthy(str) {
-    const isFalsey = [undefined, null, "", "0", "no", "false"].includes(
-      str?.toLowerCase()
-    );
-    return !isFalsey;
-  }
+  
 });
