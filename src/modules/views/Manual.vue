@@ -35,7 +35,7 @@
       <div class="half">
         <h2 class="heading">Diff</h2>
         <p>
-          View differences between current data model and snapsshot file on
+          View differences between current data model and snapshot file on
           disk.
         </p>
         <v-button class="button" full-width @click="getDiff()">
@@ -138,7 +138,7 @@ export default {
         pullMsg.value = "";
         api
           .post(`${BASE}/trigger/pull`)
-          .then((result) => {
+          .then(() => {
             pullMsg.value = "Successfully wrote snapshot!";
           })
           .catch((e) => {
@@ -227,9 +227,6 @@ export default {
 }
 .button {
   margin: 8px 0 18px 0;
-}
-.ucfirst {
-  text-transform: capitalize;
 }
 
 .form-grid {
