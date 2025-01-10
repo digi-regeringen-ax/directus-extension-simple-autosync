@@ -65,7 +65,7 @@ export default defineEndpoint({
         status = 200;
       } catch (e) {
         console.log(e);
-        status = e.status;
+        if(e.status) status = e.status;
       }
 
       return res.status(status).json({ success, snapshot }).end();
@@ -98,7 +98,7 @@ export default defineEndpoint({
         status = 200;
       } catch (e) {
         console.log(e);
-        status = e.status;
+        if(e.status) status = e.status;
       }
 
       return res.status(status).json({ success, diff }).end();
