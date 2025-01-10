@@ -11,4 +11,10 @@ export default defineModule({
 			component: ModuleComponent,
 		},
 	],
+	preRegisterCheck: (user) => {
+		/**
+		 * For admin's eyes only
+		 */
+		return user.admin_access;
+	}
 });
