@@ -40,7 +40,7 @@
         </p>
         <v-button class="button" full-width @click="getDiff()">
           <v-icon name="difference" />
-          <span>Show diff</span>
+          <span>{{ diff ? 'Hide diff' : 'Show diff' }}</span>
         </v-button>
         <p v-if="diffMsg">{{ diffMsg }}</p>
       </div>
@@ -166,8 +166,14 @@ export default {
     }
 
     async function getDiff() {
+      const hasPreviousDiff = !!diff.value;
+
       diffMsg.value = "";
       diff.value = null;
+
+      // Simply reset diff on hide toggle
+      if(hasPreviousDiff) return;
+
       api
         .post(`${BASE}/trigger/push`, { dry_run: true })
         .then((result) => {
