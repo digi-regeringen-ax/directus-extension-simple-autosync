@@ -124,7 +124,6 @@ export default {
 
     async function getConfig() {
       const res = await api.get(`${BASE}/config`).then((result) => result.data);
-      console.log("res", res);
       config.value = res;
     }
 
