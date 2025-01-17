@@ -3,7 +3,15 @@ import fs from "node:fs";
 export async function pullSnapshot(_schemaService) {
   const snapshot = await _schemaService.snapshot();
   const json = JSON.stringify(snapshot, null, 4);
-  fs.writeFileSync(getSnapshotFilepath(), json, { flag: "w" });
+
+  const filePath = getSnapshotFilepath();
+
+  const dir = path.dirname(filePath);
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+
+  fs.writeFileSync(filePath, json, { flag: "w" });
 
   return snapshot;
 }
