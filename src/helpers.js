@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import path from "node:path";
 
 export async function pullSnapshot(_schemaService) {
   const snapshot = await _schemaService.snapshot();
