@@ -34,13 +34,13 @@ export default defineEndpoint({
         .json({
           AUTOSYNC_PULL: isStringTruthy(process.env.AUTOSYNC_PULL),
           AUTOSYNC_PUSH: isStringTruthy(process.env.AUTOSYNC_PUSH),
-          AUTOSYNC_FILE_PATH: getSnapshotFilepath(),
+          AUTOSYNC_FILE_PATH: getSnapshotFilepath(false),
         })
         .end();
     });
     router.get("/snapshot-file", checkPermission(context), async (req, res) => {
       try {
-        const filepath = getSnapshotFilepath();
+        const filepath = getSnapshotFilepath(false);
         return res.download(filepath);
       } catch (e) {
         console.log("snapshot-file error: ", e);
