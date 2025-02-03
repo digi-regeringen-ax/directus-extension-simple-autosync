@@ -34,14 +34,15 @@ export async function pushSnapshot(_schemaService, dryRun = false) {
     return diff;
 }
 
-
-export function getSnapshotFilepath(getWithCurrentTimeStamp = false) {
+export function getSnapshotFilepath(setCurrentTimeStamp = false) {
     const defaultDir = `/directus/autosync-config`;
     const dir = process.env.AUTOSYNC_FILE_PATH || defaultDir;
 
-    let filename = 'snapshot.json';
+    let filename;
 
-    if (getWithCurrentTimeStamp) {
+    if (process.env.AUTOSYNC_FILE_NAME) {
+        filename = process.env.AUTOSYNC_FILE_NAME;
+    } else if (setCurrentTimeStamp) {
         const now = new Date();
         const timestamp = now.toISOString().replace(/[-:]/g, "").split(".")[0];
         filename = `snapshot_${timestamp}.json`;
@@ -50,9 +51,7 @@ export function getSnapshotFilepath(getWithCurrentTimeStamp = false) {
             /^snapshot_\d{8}_\d{6}\.json$/.test(file)
         );
 
-        if (files.length >0) {
-            filename = files.sort().reverse()[0];
-        }
+        filename = files.length > 0 ? files.sort().reverse()[0] : 'snapshot.json';
     }
     return path.join(dir, filename);
 }
