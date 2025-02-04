@@ -52,7 +52,7 @@
     "add": "directus-extension add"
   },
   "devDependencies": {
-    "@directus/extensions-sdk": "12.1.4",
+    "@directus/extensions-sdk": "13.0.0",
     "lodash": "^4.17.21"
   },
   "dependencies": {

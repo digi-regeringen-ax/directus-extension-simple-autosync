@@ -1,11 +1,11 @@
 import fs from "node:fs";
 import path from "node:path";
 
-export async function pullSnapshot(_schemaService) {
+export async function pullSnapshot(_schemaService, version) {
     const snapshot = await _schemaService.snapshot();
     const json = JSON.stringify(snapshot, null, 4);
 
-    const filePath = getSnapshotFilepath(true);
+    const filePath = getSnapshotFilepath(true, version);
 
     const dir = path.dirname(filePath);
     if (!fs.existsSync(dir)) {
@@ -17,10 +17,12 @@ export async function pullSnapshot(_schemaService) {
     return snapshot;
 }
 
-export async function pushSnapshot(_schemaService, dryRun = false) {
-    const snapshot = fs.readFileSync(getSnapshotFilepath(false));
-    const object = JSON.parse(snapshot);
+export async function pushSnapshot(_schemaService, dryRun = false, version) {
+    const filename = getSnapshotFilepath(false, version);
+    console.log('Applying', filename);
+    const snapshot = fs.readFileSync(filename);
 
+    const object = JSON.parse(snapshot);
     const currentSnapshot = await _schemaService.snapshot();
 
     const diff = await _schemaService.diff(object, {currentSnapshot});
@@ -34,10 +36,9 @@ export async function pushSnapshot(_schemaService, dryRun = false) {
     return diff;
 }
 
-export function getSnapshotFilepath(setCurrentTimeStamp = false) {
+export function getSnapshotFilepath(setCurrentTimeStamp = false, version = 'unknown') {
     const defaultDir = `/directus/autosync-config`;
     const dir = process.env.AUTOSYNC_FILE_PATH || defaultDir;
-
     let filename;
 
     if (process.env.AUTOSYNC_FILE_NAME) {
@@ -45,24 +46,20 @@ export function getSnapshotFilepath(setCurrentTimeStamp = false) {
     } else if (setCurrentTimeStamp) {
         const now = new Date();
         const timestamp = now.toISOString().replace(/[-:]/g, "").split(".")[0];
-        filename = `snapshot_${timestamp}.json`;
+        filename = `snapshot_${version}_${timestamp}.json`;
     } else {
         const files = fs.readdirSync(dir).filter(file =>
-            /^snapshot_\d{8}_\d{6}\.json$/.test(file)
+            new RegExp(`^snapshot_${version}_\\d{8}T\\d{6}\\.json$`).test(file)
         );
 
-        filename = files.length > 0 ? files.sort().reverse()[0] : 'snapshot.json';
+        filename = files.length > 0 ? files.sort().reverse()[0] : `snapshot_${version}.json`;
     }
+
     return path.join(dir, filename);
 }
 
-export function getSnapshotFilename() {
-    return path.basename(getSnapshotFilepath(false));
-}
-
 export function isStringTruthy(str) {
-    const isFalsey = [undefined, null, "", "0", "no", "false"].includes(
+    return ![undefined, null, "", "0", "no", "false"].includes(
         str?.toLowerCase()
     );
-    return !isFalsey;
 }

@@ -17,16 +17,23 @@ hook parts.
 Control what the extension does by setting environment variables in your Directus setup.
 
 To automatically overwrite the snapshot file while making data model changes:
+
 `AUTOSYNC_PULL=true`
+
 This is typically suitable for local development.
 
 To automatically apply the snapshot file on startup:
+
 `AUTOSYNC_PUSH=true`
+
 This is typically suitable for deployed live environments.
 
 To set the snapshot file name to a static file:
+
+
 `AUTOSYNC_FILE_NAME=my-snapshot.json`
-otherwise the file name will be created dynamically using this pattern: `snapshot_{YYYY}{MM}{DD}T{HH}{MM}{SS}.json`.
+
+Otherwise the file name will be created dynamically using this pattern: `snapshot_{version}_{YYYY}{MM}{DD}T{HH}{MM}{SS}.json`.
 Fallback is `snapshot.json`, as this aligns with the official Directus Docker image.
 
 To change the snapshot filepath, you can optionally set:
