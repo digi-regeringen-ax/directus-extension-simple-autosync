@@ -81,6 +81,9 @@ export function getCurrentTimestamp() {
     return timestamp;
 }
 
+// log prefix
+export const LP = "simple-autosync:";
+
 function getSnapshotDir() {
     const defaultDir = `${process.cwd()}/autosync-config`;
     const dir = process.env.AUTOSYNC_FILE_PATH || defaultDir;

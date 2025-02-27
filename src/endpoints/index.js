@@ -5,6 +5,7 @@ import {
     getSnapshotFilepath,
     isStringTruthy,
     pushSnapshot,
+    LP
 } from "../helpers";
 
 // Must be admin to access these endpoints
@@ -23,6 +24,8 @@ const checkPermission = () => async (req, res, next) => {
 export default defineEndpoint({
     id: "simple-autosync",
     handler: async (router, context) => {
+
+        const { logger } = context;
 
         const getVersion = async (req) => {
             const {ServerService} = context.services;
@@ -58,7 +61,7 @@ export default defineEndpoint({
                 const filepath = getSnapshotFilepath(version);
                 return res.download(filepath);
             } catch (e) {
-                console.log("snapshot-file error: ", e);
+                logger.error(e, `${LP} snapshot-file`);
                 return res.status(500).send("Failed to read snapshot file!");
             }
         });
@@ -82,7 +85,7 @@ export default defineEndpoint({
                 success = true;
                 status = 200;
             } catch (e) {
-                console.log(e);
+                logger.error(e, `${LP} trigger/pull`);
                 if (e.status) status = e.status;
                 r.error = e;
             }
@@ -123,7 +126,7 @@ export default defineEndpoint({
                 success = true;
                 status = 200;
             } catch (e) {
-                console.log((e));
+                logger.error(e, `${LP} trigger/push`);
                 if (e.status) status = e.status;
                 r.error = e;
             }

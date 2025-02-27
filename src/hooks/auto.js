@@ -1,7 +1,7 @@
 import {defineHook} from "@directus/extensions-sdk";
 import * as helpers from "../helpers";
 
-export default defineHook(async ({init, action}, {services, getSchema}) => {
+export default defineHook(async ({init, action}, {services, getSchema, logger}) => {
     const {SchemaService, ServerService} = services;
 
     // Fake admin since this is an internal process
@@ -29,11 +29,15 @@ export default defineHook(async ({init, action}, {services, getSchema}) => {
         "webhooks",
     ];
     const affectingActions = ["create", "update", "delete"];
+    
     const shouldAutoPull = helpers.isStringTruthy(process.env.AUTOSYNC_PULL);
+    logger.info(`${helpers.LP} AUTOSYNC_PULL is ${shouldAutoPull}`);
     if (shouldAutoPull) {
         affectingModules.forEach((moduleName) => {
             affectingActions.forEach((actionName) => {
-                action(`${moduleName}.${actionName}`, async (meta) => {
+                const a = `${moduleName}.${actionName}`;
+                action(a, async (meta) => {
+                    logger.info(`${helpers.LP} auto-pull triggered by ${a}`);
                     await doPull();
                 });
             });
@@ -41,8 +45,10 @@ export default defineHook(async ({init, action}, {services, getSchema}) => {
     }
 
     const shouldAutoPush = helpers.isStringTruthy(process.env.AUTOSYNC_PUSH);
+    logger.info(`${helpers.LP} AUTOSYNC_PUSH is ${shouldAutoPush}`);
     if (shouldAutoPush) {
         action("server.start", async (meta) => {
+            logger.info(`${helpers.LP} auto-push triggered by server.start`);
             await doPush();
         });
     }
@@ -51,7 +57,7 @@ export default defineHook(async ({init, action}, {services, getSchema}) => {
         try {
             await helpers.pushSnapshot(_schemaService, false, versionData.version);
         } catch (e) {
-            console.log("simple-autosync: doPush error!", e);
+            logger.error(e, `${helpers.LP} doPush:`);
         }
     }
 
@@ -59,7 +65,7 @@ export default defineHook(async ({init, action}, {services, getSchema}) => {
         try {
             await helpers.pullSnapshot(_schemaService, versionData.version);
         } catch (e) {
-            console.log("simple-autosync: doPull error!", e);
+            logger.error(e, `${helpers.LP} doPull:`);
         }
     }
 
