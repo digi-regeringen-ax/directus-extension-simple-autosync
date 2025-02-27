@@ -20,13 +20,18 @@
             Snapshot filepath is
             <span class="bold">{{ config.AUTOSYNC_FILE_PATH }}</span>
           </li>
+          <li v-if="config.latestFilepath">
+            Latest snapshot for this version is
+            <span class="bold">{{ config.latestFilepath }}</span>
+          </li>
+          <li v-else><span class="bold">⚠ There is no snapshot on disk for this version ({{ config.version }})</span></li>
         </ul>
       </div>
 
       <div class="half">
         <h2 class="heading">Download</h2>
-        <p>Download the currently stored snapshot file from server disk.</p>
-        <v-button class="button" full-width :href="downloadLink">
+        <p>Download the latest currently stored snapshot file from server disk.</p>
+        <v-button class="button" :disabled="!config.latestFilepath" full-width :href="downloadLink">
           <v-icon name="download"/>
           <span>Download</span>
         </v-button>
@@ -34,7 +39,7 @@
       <div class="half">
         <h2 class="heading">Diff</h2>
         <p>
-          View differences between current data model and snapshot file on
+          View differences between current data model and the latest snapshot file on
           disk.
         </p>
         <v-button class="button" full-width @click="getDiff()">
@@ -79,7 +84,7 @@
       </div>
       <div class="half">
         <h2 class="heading">Manual push</h2>
-        <p>Apply snapshot file from disk to database.</p>
+        <p>Apply latest snapshot file from disk to database.</p>
         <v-button class="button" full-width @click="applySnapshot()">
           <v-icon name="upload"/>
           <span>Apply snaphot file</span>
@@ -140,9 +145,10 @@ export default {
             .post(`${BASE}/trigger/pull`)
             .then(() => {
               pullMsg.value = "Successfully wrote snapshot!";
+              getConfig();
             })
             .catch((e) => {
-              pullMsg.value = "Failed: " + (e.message || "unknown reason");
+              pullMsg.value = getError(e);
               console.log("e", e);
             });
       }
@@ -158,7 +164,7 @@ export default {
               pushMsg.value = result.data.diff ? "Successfully applied snapshot!" : "No differences to apply!";
             })
             .catch((e) => {
-              pushMsg.value = "Failed: " + (e.message || "unknown reason");
+              pushMsg.value = getError(e);
               console.log("e", e);
             });
       }
@@ -182,13 +188,19 @@ export default {
             }
           })
           .catch((e) => {
-            diffMsg.value = "Failed: " + (e.message || "unknown reason");
-            console.log("e", e);
+            console.log(e);
+            diffMsg.value = getError(e);
           });
     }
 
     async function diffToClipboard() {
       navigator.clipboard.writeText(toJson(diff.value));
+    }
+
+    function getError(e) {
+      const prefix = "⚠️ Failed: ";
+      const plainMessage = e.message || "unknown reason";
+      return prefix + (e.response?.data?.error?.extensions?.reason || plainMessage);
     }
 
     function toJson(obj) {

@@ -1,3 +1,4 @@
+import fs from "node:fs";
 import {defineEndpoint} from "@directus/extensions-sdk";
 import {
     pullSnapshot,
@@ -9,7 +10,6 @@ import {
 // Must be admin to access these endpoints
 const checkPermission = () => async (req, res, next) => {
     if (req.accountability?.user == null) {
-        res;
         return res.status(401).send(`Unauthenticated`);
     }
 
@@ -32,29 +32,30 @@ export default defineEndpoint({
                 schema: req.schema,
             });
             const data = await service.serverInfo();
-            console.log('server_info', data, req.accountability);
             return data.version;
         }
 
         router.get("/config", checkPermission(context), async (req, res) => {
-            if (!req.accountability?.user) {
-                return res.status(403).send("Unauthenticated");
-            }
-
+            const version = await getVersion(req);
+            const timestampPlaceholder = "{TIMESTAMP}";
+            const versionPlaceholder = "{VERSION}";
+            const latestFilepath = getSnapshotFilepath(version);
+            const latestExists = fs.existsSync(latestFilepath);
             return res
                 .json({
                     AUTOSYNC_PULL: isStringTruthy(process.env.AUTOSYNC_PULL),
                     AUTOSYNC_PUSH: isStringTruthy(process.env.AUTOSYNC_PUSH),
-                    AUTOSYNC_FILE_PATH: getSnapshotFilepath(false, await getVersion(req)),
+                    AUTOSYNC_FILE_PATH: getSnapshotFilepath(versionPlaceholder, timestampPlaceholder),
+                    latestFilepath: latestExists ? latestFilepath : null,
+                    version
                 })
                 .end();
         });
 
         router.get("/snapshot-file", checkPermission(context), async (req, res) => {
-
+            const version = await getVersion(req);
             try {
-                console.log('getting snapshot file');
-                const filepath = getSnapshotFilepath(false, await getVersion(req));
+                const filepath = getSnapshotFilepath(version);
                 return res.download(filepath);
             } catch (e) {
                 console.log("snapshot-file error: ", e);
@@ -74,6 +75,8 @@ export default defineEndpoint({
             let success = false;
             let status = 500;
             let snapshot = null;
+
+            const r = { error: null };
             try {
                 snapshot = await pullSnapshot(_schemaService, await getVersion(req));
                 success = true;
@@ -81,9 +84,13 @@ export default defineEndpoint({
             } catch (e) {
                 console.log(e);
                 if (e.status) status = e.status;
+                r.error = e;
             }
 
-            return res.status(status).json({success, snapshot}).end();
+            r.snapshot = snapshot;
+            r.success = success;
+
+            return res.status(status).json(r).end();
         });
 
         router.post("/trigger/push", checkPermission(context), async (req, res) => {
@@ -106,19 +113,25 @@ export default defineEndpoint({
 
             let success = false;
             let status = 500;
-            let diff;
+            let diff = null;
+
             const version = await getVersion(req);
-            console.log('Version: ', version)
+
+            const r = { error: null };
             try {
                 diff = await pushSnapshot(_schemaService, dryRun, version);
                 success = true;
                 status = 200;
             } catch (e) {
-                console.log(e);
+                console.log((e));
                 if (e.status) status = e.status;
+                r.error = e;
             }
 
-            return res.status(status).json({success, diff}).end();
+            r.success = success;
+            r.diff = diff;
+
+            return res.status(status).json(r).end();
         });
     },
 });
