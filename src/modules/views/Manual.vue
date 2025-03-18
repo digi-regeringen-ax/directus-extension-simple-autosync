@@ -1,7 +1,7 @@
 <template>
   <private-view title="Simple-autosync">
-    <div class="form-grid">
-      <div class="full" v-if="config">
+    <div class="form-grid"  v-if="config">
+      <div class="full">
         <h2 class="heading">Current config...</h2>
         <ul>
           <li>
@@ -17,10 +17,16 @@
               }}</span>
           </li>
           <li>
-            Snapshot filepath is
-            <span class="bold">{{ config.AUTOSYNC_FILE_PATH }}</span>
+            Inclusion of rights configurations is
+            <span class="bold">{{
+                !!config.AUTOSYNC_INCLUDE_RIGHTS ? "on" : "off"
+              }}</span>
           </li>
-          <li v-if="config.latestFilepath">
+          <li>
+            Snapshot filepath is
+            <span class="bold">{{ config.exampleFilepath }}</span>
+          </li>
+          <li v-if="config && config.latestFilepath">
             Latest snapshot for this version is
             <span class="bold">{{ config.latestFilepath }}</span>
           </li>
@@ -64,7 +70,7 @@
       </div>
     </div>
 
-    <div class="form-grid">
+    <div class="form-grid" v-if="config">
       <div class="half">
         <h2 class="heading">Manual pull</h2>
         <p>
@@ -76,11 +82,13 @@
             {{ coll.collection }}
           </li>
         </ul>
+
         <v-button class="button" full-width @click="saveSnapshot()">
           <v-icon name="save_as"/>
           <span>Write snapshot file</span>
         </v-button>
         <p v-if="pullMsg">{{ pullMsg }}</p>
+
       </div>
       <div class="half">
         <h2 class="heading">Manual push</h2>
@@ -90,6 +98,12 @@
           <span>Apply snaphot file</span>
         </v-button>
         <p v-if="pushMsg">{{ pushMsg }}</p>
+        <p>Apply latest rights file from disk to database.</p>
+        <v-button class="button" full-width @click="applyRights()">
+          <v-icon name="upload"/>
+          <span>Apply policies, roles and permissions</span>
+        </v-button>
+        <p v-if="pushRightsMsg">{{ pushRightsMsg }}</p>
       </div>
     </div>
   </private-view>
@@ -110,6 +124,7 @@ export default {
 
     const pullMsg = ref("");
     const pushMsg = ref("");
+    const pushRightsMsg = ref("");
     const diffMsg = ref("");
     const config = ref(null);
     const diff = ref(null);
@@ -127,13 +142,13 @@ export default {
 
     const api = useApi();
 
-    async function getConfig() {
+    async function getEnvConfig() {
       const res = await api.get(`${BASE}/config`).then((result) => result.data);
       config.value = res;
     }
 
     onMounted(() => {
-      getConfig();
+      getEnvConfig();
     });
 
     async function saveSnapshot() {
@@ -145,7 +160,7 @@ export default {
             .post(`${BASE}/trigger/pull`)
             .then(() => {
               pullMsg.value = "Successfully wrote snapshot!";
-              getConfig();
+              getEnvConfig();
             })
             .catch((e) => {
               pullMsg.value = getError(e);
@@ -154,17 +169,34 @@ export default {
       }
     }
 
+
     async function applySnapshot() {
       const warning = "Are you sure? Your current data model will be overwritten.";
       if (confirm(warning)) {
         pushMsg.value = "";
         api
-            .post(`${BASE}/trigger/push`, {dry_run: false})
+            .post(`${BASE}/trigger/push-snapshot`, {dry_run: false})
             .then((result) => {
               pushMsg.value = result.data.diff ? "Successfully applied snapshot!" : "No differences to apply!";
             })
             .catch((e) => {
               pushMsg.value = getError(e);
+              console.log("e", e);
+            });
+      }
+    }
+
+    async function applyRights() {
+      const warning = "Are you sure? Your current roles, permissions and policies will be overwritten.";
+      if (confirm(warning)) {
+        pushRightsMsg.value = "";
+        api
+            .post(`${BASE}/trigger/push-rights`, {dry_run: false})
+            .then((result) => {
+              pushRightsMsg.value = "Successfully applied rights!";
+            })
+            .catch((e) => {
+              pushRightsMsg.value = getError(e);
               console.log("e", e);
             });
       }
@@ -180,7 +212,7 @@ export default {
       if (hasPreviousDiff) return;
 
       api
-          .post(`${BASE}/trigger/push`, {dry_run: true})
+          .post(`${BASE}/trigger/push-snapshot`, {dry_run: true})
           .then((result) => {
             diff.value = result.data.diff;
             if (!diff.value) {
@@ -218,6 +250,8 @@ export default {
       pullMsg,
       diffMsg,
       pushMsg,
+      pushRightsMsg,
+      applyRights,
       config,
       diff,
     };

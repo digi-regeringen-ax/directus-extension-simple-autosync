@@ -1,11 +1,13 @@
 import fs from "node:fs";
 import {defineEndpoint} from "@directus/extensions-sdk";
 import {
-    pullSnapshot,
-    getSnapshotFilepath,
+    pullSyncFiles,
+    getSyncFilePath,
     isStringTruthy,
     pushSnapshot,
-    LP
+    LP,
+    pushRights,
+    getEnvConfig
 } from "../helpers";
 
 // Must be admin to access these endpoints
@@ -40,15 +42,17 @@ export default defineEndpoint({
 
         router.get("/config", checkPermission(context), async (req, res) => {
             const version = await getVersion(req);
+
             const timestampPlaceholder = "{TIMESTAMP}";
             const versionPlaceholder = "{VERSION}";
-            const latestFilepath = getSnapshotFilepath(version);
+            
+            const exampleFilepath = getSyncFilePath(timestampPlaceholder, versionPlaceholder);
+            const latestFilepath = getSyncFilePath('snapshot', version);
             const latestExists = fs.existsSync(latestFilepath);
             return res
                 .json({
-                    AUTOSYNC_PULL: isStringTruthy(process.env.AUTOSYNC_PULL),
-                    AUTOSYNC_PUSH: isStringTruthy(process.env.AUTOSYNC_PUSH),
-                    AUTOSYNC_FILE_PATH: getSnapshotFilepath(versionPlaceholder, timestampPlaceholder),
+                    ...(getEnvConfig()),
+                    exampleFilepath,
                     latestFilepath: latestExists ? latestFilepath : null,
                     version
                 })
@@ -58,7 +62,7 @@ export default defineEndpoint({
         router.get("/snapshot-file", checkPermission(context), async (req, res) => {
             const version = await getVersion(req);
             try {
-                const filepath = getSnapshotFilepath(version);
+                const filepath = getSyncFilePath('snapshot', version);
                 return res.download(filepath);
             } catch (e) {
                 logger.error(e, `${LP} snapshot-file`);
@@ -67,13 +71,6 @@ export default defineEndpoint({
         });
 
         router.post("/trigger/pull", checkPermission(context), async (req, res) => {
-            const {SchemaService} = context.services;
-
-            // Include accountability from request, which will
-            // fail the pullSnapshot call if user is not eligble
-            const _schemaService = new SchemaService({
-                accountability: req.accountability,
-            });
 
             let success = false;
             let status = 500;
@@ -81,7 +78,10 @@ export default defineEndpoint({
 
             const r = { error: null };
             try {
-                snapshot = await pullSnapshot(_schemaService, await getVersion(req));
+                // Include accountability from request, which will
+                // fail the pullSyncFiles call if user is not eligble
+                const pullRes = await pullSyncFiles(context.services, req.schema, req.accountability, await getVersion(req));
+                snapshot = pullRes.snapshot;
                 success = true;
                 status = 200;
             } catch (e) {
@@ -96,8 +96,7 @@ export default defineEndpoint({
             return res.status(status).json(r).end();
         });
 
-        router.post("/trigger/push", checkPermission(context), async (req, res) => {
-            const {SchemaService} = context.services;
+        router.post("/trigger/push-snapshot", checkPermission(context), async (req, res) => {
 
             /**
              *
@@ -108,11 +107,6 @@ export default defineEndpoint({
             const dryRunParam = (req.body?.dry_run || "") + ""; // to string
             const dryRun = isStringTruthy(dryRunParam);
 
-            // Include accountability from request, which will
-            // fail the pullSnapshot call if user is not eligble
-            const _schemaService = new SchemaService({
-                accountability: req.accountability,
-            });
 
             let success = false;
             let status = 500;
@@ -122,11 +116,13 @@ export default defineEndpoint({
 
             const r = { error: null };
             try {
-                diff = await pushSnapshot(_schemaService, dryRun, version);
+                // Include accountability from request, which will
+                // fail the pullSyncFiles call if user is not eligble
+                diff = await pushSnapshot(context.services, req.schema, req.accountability, dryRun, version);
                 success = true;
                 status = 200;
             } catch (e) {
-                logger.error(e, `${LP} trigger/push`);
+                logger.error(e, `${LP} trigger/push-snapshot`);
                 if (e.status) status = e.status;
                 r.error = e;
             }
@@ -136,5 +132,35 @@ export default defineEndpoint({
 
             return res.status(status).json(r).end();
         });
+
+        router.post("/trigger/push-rights", checkPermission(context), async (req, res) => {
+
+
+            let success = false;
+            let status = 500;
+            let diff = null;
+
+            const version = await getVersion(req);
+
+            const r = { error: null };
+            try {
+                // Include accountability from request, which will
+                // fail the pullSyncFiles call if user is not eligble
+                const { created, updated, deleted } = await pushRights(context.services, req.schema, req.accountability, version);
+                r = { ...r, created, updated, deleted };
+                success = true;
+                status = 200;
+            } catch (e) {
+                logger.error(e, `${LP} trigger/push-rights`);
+                if (e.status) status = e.status;
+                r.error = e;
+            }
+
+            r.success = success;
+
+            return res.status(status).json(r).end();
+        });
+
+  
     },
 });

@@ -2,13 +2,15 @@ import {defineHook} from "@directus/extensions-sdk";
 import * as helpers from "../helpers";
 
 export default defineHook(async ({init, action}, {services, getSchema, logger}) => {
-    const {SchemaService, ServerService} = services;
+    const {SchemaService, ServerService } = services;
 
     // Fake admin since this is an internal process
     const accountability = {admin: true};
     const _schemaService = new SchemaService({accountability});
+    const schema = await getSchema();
     const _serverSchema = new ServerService({
-        accountability: {admin: true, user: true}, schema: await getSchema()
+        accountability: {admin: true, user: true},
+        schema
     });
     const versionData = await _serverSchema.serverInfo();
 
@@ -30,7 +32,7 @@ export default defineHook(async ({init, action}, {services, getSchema, logger}) 
     ];
     const affectingActions = ["create", "update", "delete"];
     
-    const shouldAutoPull = helpers.isStringTruthy(process.env.AUTOSYNC_PULL);
+    const shouldAutoPull = helpers.getEnvConfig().AUTOSYNC_PULL;
     logger.info(`${helpers.LP} AUTOSYNC_PULL is ${shouldAutoPull}`);
     if (shouldAutoPull) {
         affectingModules.forEach((moduleName) => {
@@ -44,7 +46,7 @@ export default defineHook(async ({init, action}, {services, getSchema, logger}) 
         });
     }
 
-    const shouldAutoPush = helpers.isStringTruthy(process.env.AUTOSYNC_PUSH);
+    const shouldAutoPush = helpers.getEnvConfig().AUTOSYNC_PUSH;
     logger.info(`${helpers.LP} AUTOSYNC_PUSH is ${shouldAutoPush}`);
     if (shouldAutoPush) {
         action("server.start", async (meta) => {
@@ -55,7 +57,7 @@ export default defineHook(async ({init, action}, {services, getSchema, logger}) 
 
     async function doPush() {
         try {
-            await helpers.pushSnapshot(_schemaService, false, versionData.version);
+            await helpers.pushSnapshot(services, schema, accountability, false, versionData.version);
         } catch (e) {
             logger.error(e, `${helpers.LP} doPush:`);
         }
@@ -63,7 +65,7 @@ export default defineHook(async ({init, action}, {services, getSchema, logger}) 
 
     async function doPull() {
         try {
-            await helpers.pullSnapshot(_schemaService, versionData.version);
+            await helpers.pullSyncFiles(services, schema, accountability, versionData.version);
         } catch (e) {
             logger.error(e, `${helpers.LP} doPull:`);
         }
