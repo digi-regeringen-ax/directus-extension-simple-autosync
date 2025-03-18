@@ -1,5 +1,5 @@
 import {defineHook} from "@directus/extensions-sdk";
-import * as helpers from "../helpers";
+import * as helpers from "../lib/helpers";
 
 export default defineHook(async ({init, action}, {services, getSchema, logger}) => {
     const {SchemaService, ServerService } = services;

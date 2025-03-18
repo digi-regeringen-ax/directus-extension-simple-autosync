@@ -1,14 +1,13 @@
 import fs from "node:fs";
 import {defineEndpoint} from "@directus/extensions-sdk";
 import {
-    pullSyncFiles,
     getSyncFilePath,
     isStringTruthy,
-    pushSnapshot,
     LP,
-    pushRights,
     getEnvConfig
-} from "../helpers";
+} from "../lib/helpers";
+import { pullSyncFiles, pushSnapshot } from "../lib/snapshot.js";
+import { pushRights, getCurrentRightsSetup } from "../lib/rights.js";
 
 // Must be admin to access these endpoints
 const checkPermission = () => async (req, res, next) => {
@@ -42,18 +41,23 @@ export default defineEndpoint({
 
         router.get("/config", checkPermission(context), async (req, res) => {
             const version = await getVersion(req);
+            const envConfig = getEnvConfig();
 
             const timestampPlaceholder = "{TIMESTAMP}";
             const versionPlaceholder = "{VERSION}";
             
-            const exampleFilepath = getSyncFilePath(timestampPlaceholder, versionPlaceholder);
+            const snapshotExampleFilepath = getSyncFilePath('snapshot', versionPlaceholder, timestampPlaceholder);
+            const rightsExampleFilepath =  getSyncFilePath('rights', versionPlaceholder, timestampPlaceholder);
             const latestFilepath = getSyncFilePath('snapshot', version);
             const latestExists = fs.existsSync(latestFilepath);
             return res
                 .json({
-                    ...(getEnvConfig()),
-                    exampleFilepath,
-                    latestFilepath: latestExists ? latestFilepath : null,
+                    ...envConfig,
+                    filepaths: {
+                        snapshot: snapshotExampleFilepath,
+                        rights: envConfig.AUTOSYNC_INCLUDE_RIGHTS ? rightsExampleFilepath : null,
+                        latest: latestExists ? latestFilepath : null
+                    },
                     version
                 })
                 .end();
@@ -138,16 +142,24 @@ export default defineEndpoint({
 
             let success = false;
             let status = 500;
-            let diff = null;
+            
+            /**
+             *
+             * If true, endpoint will only return the
+             * objects that would update, without
+             * changing anything.
+             *
+             */
+            const dryRunParam = (req.body?.dry_run || "") + ""; // to string
+            const dryRun = isStringTruthy(dryRunParam);
 
             const version = await getVersion(req);
 
-            const r = { error: null };
+            let r = { error: null };
             try {
-                // Include accountability from request, which will
-                // fail the pullSyncFiles call if user is not eligble
-                const { created, updated, deleted } = await pushRights(context.services, req.schema, req.accountability, version);
-                r = { ...r, created, updated, deleted };
+                
+                const pushRightsRes = await pushRights(context.services, req.schema, req.accountability, dryRun, version);
+                r = { ...r, rights: pushRightsRes };
                 success = true;
                 status = 200;
             } catch (e) {
@@ -160,6 +172,48 @@ export default defineEndpoint({
 
             return res.status(status).json(r).end();
         });
+
+        router.get("/current-rights", checkPermission(context), async (req, res) => {
+            const {PoliciesService, PermissionsService, RolesService, AccessService} = context.services;
+            const policiesService = new PoliciesService({
+                accountability: req.accountability,
+                schema: req.schema,
+            });
+            const permissionsService = new PermissionsService({
+                accountability: req.accountability,
+                schema: req.schema,
+            });
+            const rolesService = new RolesService({
+                accountability: req.accountability,
+                schema: req.schema,
+            });
+            const accessService = new AccessService({
+                accountability: req.accountability,
+                schema: req.schema,
+            });
+            let status = 500;
+            let success = false;
+            let r = { error: null, rights: null };
+
+            try {
+                const rights = await getCurrentRightsSetup(
+                    policiesService,
+                    permissionsService,
+                    rolesService,
+                    accessService
+                );
+                r.rights = rights;
+                success = true;
+                status = 200;
+            } catch (e) {
+                logger.error(e, `${LP} current-rights`);
+                if (e.status) status = e.status;
+                r.error = e;
+            }
+            
+
+            return res.status(status).json(r).end();
+        })
 
   
     },

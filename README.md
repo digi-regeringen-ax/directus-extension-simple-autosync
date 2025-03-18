@@ -22,9 +22,9 @@ Control what the extension does by setting environment variables in your Directu
 ### Single or multiple files
 By default, each generated snapshot will be saved in **separate files**. File name will be generated dynamically using this pattern: `snapshot_{version}_{YYYY}{MM}{DD}T{HH}{MM}{SS}.json`.
 
-If you'd like to keep things simpler and overwrite the **same file** for each change instead, simply assign a static filename:
+If you'd like to keep things simpler and overwrite the **same file** for each change instead, simply set the following env variable:
 ```
-AUTOSYNC_FILE_NAME=snapshot.json
+AUTOSYNC_MULTIFILE=false
 ```
 
 By default, the file/s will be written to `<project directory>/autosync-config`. Optionally, you may specify any other directory:
