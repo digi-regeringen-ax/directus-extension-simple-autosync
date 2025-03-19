@@ -99,8 +99,6 @@ export default defineEndpoint({
 
                 const r = { error: null };
                 try {
-                    // Include accountability from request, which will
-                    // fail the pullSyncFiles call if user is not eligble
                     const pullRes = await pullSyncFiles(
                         context.services,
                         req.schema,
@@ -144,8 +142,6 @@ export default defineEndpoint({
 
                 const r = { error: null };
                 try {
-                    // Include accountability from request, which will
-                    // fail the pullSyncFiles call if user is not eligble
                     diff = await pushSnapshot(
                         context.services,
                         req.schema,
