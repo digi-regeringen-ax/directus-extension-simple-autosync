@@ -61,7 +61,7 @@ export async function pushRights(
         throw new Error("Rights functionality not enabled");
 
     const rightsFilePath = getSyncFilePath("rights", version);
-    const {
+    let {
         policies: policiesFromFile,
         roles: rolesFromFile,
         permissions: permissionsFromFile,
