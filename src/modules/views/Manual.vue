@@ -128,7 +128,7 @@
         <div class="form-grid">
           <div class="half">
             <h3 class="small-heading">Snapshot</h3>
-            <p>Apply latest snapshot file from disk to database.</p>
+            <p>Apply latest data model snapshot file from disk to database.</p>
             <v-button class="button" full-width @click="applySnapshot()">
               <v-icon name="upload"/>
               <span>Apply snaphot file</span>
