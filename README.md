@@ -20,11 +20,9 @@ hook parts.
 Control what the extension does by setting environment variables in your Directus setup.
 
 ### Single or multiple files
-By default, each generated snapshot will be saved in **separate files**. File name will be generated dynamically using this pattern: `snapshot_{version}_{YYYY}{MM}{DD}T{HH}{MM}{SS}.json`.
-
-If you'd like to keep things simpler and overwrite the **same file** for each change instead, simply set the following env variable:
+By default, each time a snapshot is generated, it will overwrite the **same file** - `snapshot.json`. If you'd like to keep things more granular and generate a new, timestamped file for each change instead, simply set the following env variable:
 ```
-AUTOSYNC_MULTIFILE=false
+AUTOSYNC_MULTIFILE=true
 ```
 
 By default, the file/s will be written to `<project directory>/autosync-config`. Optionally, you may specify any other directory:
@@ -45,6 +43,23 @@ To automatically apply the latest snapshot file to the database on startup:
 AUTOSYNC_PUSH=true
 ```
 This is typically suitable for CI/CD deployed live environments.
+
+### Including policies, roles and permissions
+Usually, a project has carefully configured levels of access that go along with your data model setup. This extension uses the term "rights" to collectively describe permissions, policies and roles along with their relations.
+
+**Note:** In order to prevent duplicates, avoid renaming and changing the description of the default roles and policies that come with the Directus initial setup.
+
+To enable separate sync files for rights, simple set the following env variable:
+```
+AUTOSYNC_INCLUDE_RIGHTS=true
+```
+
+Now your rights data will be synced as well, stored in a separate file `rights.json`.
+
+## What about my existing data model?
+**NOTE:** Using this extension will cause loss of data and unexpected problems if your environment that you are *applying the snapshot file to* already has collections (and roles, polices and permissions if using the rights feature) that are not represented in your snapshot file.
+
+To get things sorted, download a snapshot file from your existing environment using the Manual functions (see below), to get things in sync with your development environment.
 
 ## Manual functions
 

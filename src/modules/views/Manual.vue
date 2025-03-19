@@ -94,9 +94,6 @@
             <p v-if="rightsDiffMsg">{{ rightsDiffMsg }}</p>
           </div>
         </div>
-        
-        
-        
       </div>
     </div>
     <div class="form-grid" v-if="diff">
