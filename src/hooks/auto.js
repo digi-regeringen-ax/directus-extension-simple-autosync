@@ -17,6 +17,13 @@ export default defineHook(
         });
         const versionData = await _serverSchema.serverInfo();
 
+        const shouldAutoPull = helpers.getEnvConfig().AUTOSYNC_PULL;
+        const shouldAutoPush = helpers.getEnvConfig().AUTOSYNC_PUSH;
+        if(shouldAutoPull && shouldAutoPush) {
+            logger.warn(`${helpers.LP} Both AUTOSYNC_PULL and AUTOSYNC_PUSH are active! Disabling autosync altogether to avoid infinite loops.`);
+            return;
+        }
+
         const affectingModules = [
             "collections",
             "fields",
@@ -38,7 +45,6 @@ export default defineHook(
         const shouldIncludeRights =
             helpers.getEnvConfig().AUTOSYNC_INCLUDE_RIGHTS;
 
-        const shouldAutoPull = helpers.getEnvConfig().AUTOSYNC_PULL;
         logger.info(`${helpers.LP} AUTOSYNC_PULL is ${shouldAutoPull}`);
         if (shouldAutoPull) {
             affectingModules.forEach((moduleName) => {
@@ -54,7 +60,6 @@ export default defineHook(
             });
         }
 
-        const shouldAutoPush = helpers.getEnvConfig().AUTOSYNC_PUSH;
         logger.info(`${helpers.LP} AUTOSYNC_PUSH is ${shouldAutoPush}`);
         if (shouldAutoPush) {
             action("server.start", async (meta) => {
