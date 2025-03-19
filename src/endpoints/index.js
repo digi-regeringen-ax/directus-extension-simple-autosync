@@ -253,6 +253,8 @@ export default defineEndpoint({
                     r.error = e;
                 }
 
+                r.success = success;
+
                 return res.status(status).json(r).end();
             }
         );
