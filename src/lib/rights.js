@@ -56,12 +56,6 @@ export async function pushRights(
   const rightsFilePath = getSyncFilePath("rights", version);
   const rightsFromFile = readJson(rightsFilePath);
 
-  // TODO find better ways to accuratly determine defaults?
-  const isDefaultAdminPolicy = (policy) =>
-    policy.description === "$t:admin_description" && policy.admin_access;
-  const isDefaultPublicPolicy = (policy) =>
-    policy.description === "$t:public_description" && !policy.admin_access;
-
   const {
     policies: currentPolicies,
     roles: currentRoles,
@@ -74,28 +68,14 @@ export async function pushRights(
     accessService
   );
 
-  console.log("currentPolicies", currentPolicies);
-
   const defaultCurrentAdminPolicy = currentPolicies.find((p) =>
     isDefaultAdminPolicy(p)
   );
-  const defaultCurrentAdminAccess = currentAccess.find(
-    (a) => a.policy === defaultCurrentAdminPolicy.id
-  );
-
-  const isDefaultAdminRole = (role) =>
-    role.description === "$t:admin_description" &&
-    role.name === "Administrator";
   const defaultCurrentAdminRole = currentRoles.find((r) =>
     isDefaultAdminRole(r)
   );
-  console.log("defaultCurrentAdminRole", defaultCurrentAdminRole);
-
   const defaultCurrentPublicPolicy = currentPolicies.find((p) =>
     isDefaultPublicPolicy(p)
-  );
-  const defaultCurrentPublicAccess = currentAccess.find(
-    (a) => a.policy === defaultCurrentPublicPolicy.id
   );
 
   let policiesFromFile = rightsFromFile.policies;
@@ -237,7 +217,6 @@ export async function pushRights(
     policiesFromFile,
     currentPolicies
   );
-  console.log("initialPoliciesInput", initialPoliciesInput);
 
   const [existingPermissionsInput, initialPermissionsInput] =
     partitionCreateUpdate(permissionsFromFile, currentPermissions);
@@ -297,10 +276,6 @@ export async function pushRights(
      * Delete rights stuff removed from file
      *
      */
-    console.log("rolesToDelete", rolesToDelete);
-    console.log("policiesToDelete", policiesToDelete);
-    console.log("permissionsToDelete", permissionsToDelete);
-    console.log("accessToDelete", accessToDelete);
     const deletedRolesRes = await rolesService.deleteMany(rolesToDelete);
     const deletedPoliciesRes = await policiesService.deleteMany(
       policiesToDelete
@@ -375,6 +350,14 @@ export async function getCurrentRightsSetup(
     access: cleanUserRelations(access),
   };
 }
+
+// TODO find better ways to accuratly determine defaults?
+const isDefaultAdminPolicy = (policy) =>
+  policy.description === "$t:admin_description" && policy.admin_access;
+const isDefaultPublicPolicy = (policy) =>
+  policy.description === "$t:public_description" && !policy.admin_access;
+const isDefaultAdminRole = (role) =>
+  role.description === "$t:admin_description" && role.name === "Administrator";
 
 function cleanUserRelations(arr) {
   return arr.map((o) => {
