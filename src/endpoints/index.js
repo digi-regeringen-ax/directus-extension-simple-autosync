@@ -1,10 +1,10 @@
 import fs from "node:fs";
-import {defineEndpoint} from "@directus/extensions-sdk";
+import { defineEndpoint } from "@directus/extensions-sdk";
 import {
     getSyncFilePath,
     isStringTruthy,
     LP,
-    getEnvConfig
+    getEnvConfig,
 } from "../lib/helpers";
 import { pullSyncFiles, pushSnapshot } from "../lib/snapshot.js";
 import { pushRights, getCurrentRightsSetup } from "../lib/rights.js";
@@ -25,11 +25,10 @@ const checkPermission = () => async (req, res, next) => {
 export default defineEndpoint({
     id: "simple-autosync",
     handler: async (router, context) => {
-
         const { logger } = context;
 
         const getVersion = async (req) => {
-            const {ServerService} = context.services;
+            const { ServerService } = context.services;
 
             const service = new ServerService({
                 accountability: req.accountability,
@@ -37,7 +36,7 @@ export default defineEndpoint({
             });
             const data = await service.serverInfo();
             return data.version;
-        }
+        };
 
         router.get("/config", checkPermission(context), async (req, res) => {
             const version = await getVersion(req);
@@ -45,176 +44,221 @@ export default defineEndpoint({
 
             const timestampPlaceholder = "{TIMESTAMP}";
             const versionPlaceholder = "{VERSION}";
-            
-            const snapshotExampleFilepath = getSyncFilePath('snapshot', versionPlaceholder, timestampPlaceholder);
-            const rightsExampleFilepath =  getSyncFilePath('rights', versionPlaceholder, timestampPlaceholder);
-            const latestFilepath = getSyncFilePath('snapshot', version);
+
+            const snapshotExampleFilepath = getSyncFilePath(
+                "snapshot",
+                versionPlaceholder,
+                timestampPlaceholder
+            );
+            const rightsExampleFilepath = getSyncFilePath(
+                "rights",
+                versionPlaceholder,
+                timestampPlaceholder
+            );
+            const latestFilepath = getSyncFilePath("snapshot", version);
             const latestExists = fs.existsSync(latestFilepath);
             return res
                 .json({
                     ...envConfig,
                     filepaths: {
                         snapshot: snapshotExampleFilepath,
-                        rights: envConfig.AUTOSYNC_INCLUDE_RIGHTS ? rightsExampleFilepath : null,
-                        latest: latestExists ? latestFilepath : null
+                        rights: envConfig.AUTOSYNC_INCLUDE_RIGHTS
+                            ? rightsExampleFilepath
+                            : null,
+                        latest: latestExists ? latestFilepath : null,
                     },
-                    version
+                    version,
                 })
                 .end();
         });
 
-        router.get("/snapshot-file", checkPermission(context), async (req, res) => {
-            const version = await getVersion(req);
-            try {
-                const filepath = getSyncFilePath('snapshot', version);
-                return res.download(filepath);
-            } catch (e) {
-                logger.error(e, `${LP} snapshot-file`);
-                return res.status(500).send("Failed to read snapshot file!");
+        router.get(
+            "/snapshot-file",
+            checkPermission(context),
+            async (req, res) => {
+                const version = await getVersion(req);
+                try {
+                    const filepath = getSyncFilePath("snapshot", version);
+                    return res.download(filepath);
+                } catch (e) {
+                    logger.error(e, `${LP} snapshot-file`);
+                    return res
+                        .status(500)
+                        .send("Failed to read snapshot file!");
+                }
             }
-        });
+        );
 
-        router.post("/trigger/pull", checkPermission(context), async (req, res) => {
+        router.post(
+            "/trigger/pull",
+            checkPermission(context),
+            async (req, res) => {
+                let success = false;
+                let status = 500;
+                let snapshot = null;
 
-            let success = false;
-            let status = 500;
-            let snapshot = null;
+                const r = { error: null };
+                try {
+                    // Include accountability from request, which will
+                    // fail the pullSyncFiles call if user is not eligble
+                    const pullRes = await pullSyncFiles(
+                        context.services,
+                        req.schema,
+                        req.accountability,
+                        await getVersion(req)
+                    );
+                    snapshot = pullRes.snapshot;
+                    success = true;
+                    status = 200;
+                } catch (e) {
+                    logger.error(e, `${LP} trigger/pull`);
+                    if (e.status) status = e.status;
+                    r.error = e;
+                }
 
-            const r = { error: null };
-            try {
-                // Include accountability from request, which will
-                // fail the pullSyncFiles call if user is not eligble
-                const pullRes = await pullSyncFiles(context.services, req.schema, req.accountability, await getVersion(req));
-                snapshot = pullRes.snapshot;
-                success = true;
-                status = 200;
-            } catch (e) {
-                logger.error(e, `${LP} trigger/pull`);
-                if (e.status) status = e.status;
-                r.error = e;
+                r.snapshot = snapshot;
+                r.success = success;
+
+                return res.status(status).json(r).end();
             }
+        );
 
-            r.snapshot = snapshot;
-            r.success = success;
+        router.post(
+            "/trigger/push-snapshot",
+            checkPermission(context),
+            async (req, res) => {
+                /**
+                 *
+                 * If true, endpoint will only return the
+                 * diff without applying anything.
+                 *
+                 */
+                const dryRunParam = (req.body?.dry_run || "") + ""; // to string
+                const dryRun = isStringTruthy(dryRunParam);
 
-            return res.status(status).json(r).end();
-        });
+                let success = false;
+                let status = 500;
+                let diff = null;
 
-        router.post("/trigger/push-snapshot", checkPermission(context), async (req, res) => {
+                const version = await getVersion(req);
 
-            /**
-             *
-             * If true, endpoint will only return the
-             * diff without applying anything.
-             *
-             */
-            const dryRunParam = (req.body?.dry_run || "") + ""; // to string
-            const dryRun = isStringTruthy(dryRunParam);
+                const r = { error: null };
+                try {
+                    // Include accountability from request, which will
+                    // fail the pullSyncFiles call if user is not eligble
+                    diff = await pushSnapshot(
+                        context.services,
+                        req.schema,
+                        req.accountability,
+                        dryRun,
+                        version
+                    );
+                    success = true;
+                    status = 200;
+                } catch (e) {
+                    logger.error(e, `${LP} trigger/push-snapshot`);
+                    if (e.status) status = e.status;
+                    r.error = e;
+                }
 
+                r.success = success;
+                r.diff = diff;
 
-            let success = false;
-            let status = 500;
-            let diff = null;
-
-            const version = await getVersion(req);
-
-            const r = { error: null };
-            try {
-                // Include accountability from request, which will
-                // fail the pullSyncFiles call if user is not eligble
-                diff = await pushSnapshot(context.services, req.schema, req.accountability, dryRun, version);
-                success = true;
-                status = 200;
-            } catch (e) {
-                logger.error(e, `${LP} trigger/push-snapshot`);
-                if (e.status) status = e.status;
-                r.error = e;
+                return res.status(status).json(r).end();
             }
+        );
 
-            r.success = success;
-            r.diff = diff;
+        router.post(
+            "/trigger/push-rights",
+            checkPermission(context),
+            async (req, res) => {
+                let success = false;
+                let status = 500;
 
-            return res.status(status).json(r).end();
-        });
+                /**
+                 *
+                 * If true, endpoint will only return the
+                 * objects that would update, without
+                 * changing anything.
+                 *
+                 */
+                const dryRunParam = (req.body?.dry_run || "") + ""; // to string
+                const dryRun = isStringTruthy(dryRunParam);
 
-        router.post("/trigger/push-rights", checkPermission(context), async (req, res) => {
+                const version = await getVersion(req);
 
+                let r = { error: null };
+                try {
+                    const pushRightsRes = await pushRights(
+                        context.services,
+                        req.schema,
+                        req.accountability,
+                        dryRun,
+                        version
+                    );
+                    r = { ...r, rights: pushRightsRes };
+                    success = true;
+                    status = 200;
+                } catch (e) {
+                    logger.error(e, `${LP} trigger/push-rights`);
+                    if (e.status) status = e.status;
+                    r.error = e;
+                }
 
-            let success = false;
-            let status = 500;
-            
-            /**
-             *
-             * If true, endpoint will only return the
-             * objects that would update, without
-             * changing anything.
-             *
-             */
-            const dryRunParam = (req.body?.dry_run || "") + ""; // to string
-            const dryRun = isStringTruthy(dryRunParam);
+                r.success = success;
 
-            const version = await getVersion(req);
-
-            let r = { error: null };
-            try {
-                
-                const pushRightsRes = await pushRights(context.services, req.schema, req.accountability, dryRun, version);
-                r = { ...r, rights: pushRightsRes };
-                success = true;
-                status = 200;
-            } catch (e) {
-                logger.error(e, `${LP} trigger/push-rights`);
-                if (e.status) status = e.status;
-                r.error = e;
+                return res.status(status).json(r).end();
             }
+        );
 
-            r.success = success;
+        router.get(
+            "/current-rights",
+            checkPermission(context),
+            async (req, res) => {
+                const {
+                    PoliciesService,
+                    PermissionsService,
+                    RolesService,
+                    AccessService,
+                } = context.services;
+                const policiesService = new PoliciesService({
+                    accountability: req.accountability,
+                    schema: req.schema,
+                });
+                const permissionsService = new PermissionsService({
+                    accountability: req.accountability,
+                    schema: req.schema,
+                });
+                const rolesService = new RolesService({
+                    accountability: req.accountability,
+                    schema: req.schema,
+                });
+                const accessService = new AccessService({
+                    accountability: req.accountability,
+                    schema: req.schema,
+                });
+                let status = 500;
+                let success = false;
+                let r = { error: null, rights: null };
 
-            return res.status(status).json(r).end();
-        });
+                try {
+                    const rights = await getCurrentRightsSetup(
+                        policiesService,
+                        permissionsService,
+                        rolesService,
+                        accessService
+                    );
+                    r.rights = rights;
+                    success = true;
+                    status = 200;
+                } catch (e) {
+                    logger.error(e, `${LP} current-rights`);
+                    if (e.status) status = e.status;
+                    r.error = e;
+                }
 
-        router.get("/current-rights", checkPermission(context), async (req, res) => {
-            const {PoliciesService, PermissionsService, RolesService, AccessService} = context.services;
-            const policiesService = new PoliciesService({
-                accountability: req.accountability,
-                schema: req.schema,
-            });
-            const permissionsService = new PermissionsService({
-                accountability: req.accountability,
-                schema: req.schema,
-            });
-            const rolesService = new RolesService({
-                accountability: req.accountability,
-                schema: req.schema,
-            });
-            const accessService = new AccessService({
-                accountability: req.accountability,
-                schema: req.schema,
-            });
-            let status = 500;
-            let success = false;
-            let r = { error: null, rights: null };
-
-            try {
-                const rights = await getCurrentRightsSetup(
-                    policiesService,
-                    permissionsService,
-                    rolesService,
-                    accessService
-                );
-                r.rights = rights;
-                success = true;
-                status = 200;
-            } catch (e) {
-                logger.error(e, `${LP} current-rights`);
-                if (e.status) status = e.status;
-                r.error = e;
+                return res.status(status).json(r).end();
             }
-            
-
-            return res.status(status).json(r).end();
-        })
-
-  
+        );
     },
 });
