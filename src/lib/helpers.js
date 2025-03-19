@@ -78,6 +78,3 @@ export function readJson(filePath) {
 // log prefix
 export const LP = "simple-autosync:";
 
-export function idAlreadyExistsIn(existingList, obj) {
-  return !!existingList.find((item) => obj.id === item.id);
-}

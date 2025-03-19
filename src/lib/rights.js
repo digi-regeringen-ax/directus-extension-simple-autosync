@@ -1,11 +1,13 @@
+import isEqual from "lodash.isequal";
+import partition from "lodash.partition";
+import omit from "lodash.omit";
 import {
   getEnvConfig,
   getSyncFilePath,
-  idAlreadyExistsIn,
   readJson,
   writeJson,
 } from "./helpers.js";
-import partition from "lodash.partition";
+
 
 export async function pullRights(
   services,
@@ -20,25 +22,13 @@ export async function pullRights(
   const permissionsService = new PermissionsService({ accountability, schema });
   const rolesService = new RolesService({ accountability, schema });
   const accessService = new AccessService({ accountability, schema });
-  const clean = (arr) =>
-    arr.map((o) => {
-      const cleaned = { ...o, users: undefined };
-      if (o.user) cleaned.user = null;
-      return cleaned;
-    });
-  const { policies, permissions, roles, access } = await getCurrentRightsSetup(
+  
+  const rightsData = await getCurrentRightsSetup(
     policiesService,
     permissionsService,
     rolesService,
     accessService
   );
-
-  const rightsData = {
-    policies: clean(policies),
-    permissions,
-    roles: clean(roles),
-    access: clean(access),
-  };
 
   const rightsFilePath = getSyncFilePath("rights", version, currentTimeStamp);
   writeJson(rightsFilePath, rightsData);
@@ -78,6 +68,8 @@ export async function pushRights(services, schema, accountability, dryRun = fals
     accessService
   );
 
+  console.log("currentPolicies",currentPolicies);
+
   const defaultCurrentAdminPolicy = currentPolicies.find((p) =>
     isDefaultAdminPolicy(p)
   );
@@ -86,10 +78,11 @@ export async function pushRights(services, schema, accountability, dryRun = fals
   );
 
   const isDefaultAdminRole = (role) =>
-    role.id === defaultCurrentAdminAccess.role;
+    role.description === "$t:admin_description" && role.name === "Administrator";
   const defaultCurrentAdminRole = currentRoles.find((r) =>
     isDefaultAdminRole(r)
   );
+  console.log("defaultCurrentAdminRole",defaultCurrentAdminRole);
 
   const defaultCurrentPublicPolicy = currentPolicies.find((p) =>
     isDefaultPublicPolicy(p)
@@ -98,25 +91,10 @@ export async function pushRights(services, schema, accountability, dryRun = fals
     (a) => a.policy === defaultCurrentPublicPolicy.id
   );
 
-  // Clear away any relation info which we'll
-  // re-create with access table below
-  let policiesFromFile = rightsFromFile.policies.map((policy) => {
-    let r = { ...policy };
-    delete r.roles;
-    return r;
-  });
-  let rolesFromFile = rightsFromFile.roles.map((role) => {
-    let r = { ...role };
-    delete r.policies;
-    return r;
-  });
 
-  // Don't mess with the system permissions
-  let permissionsFromFile = rightsFromFile.permissions.filter(
-    (perm) => !perm.system
-  );
-  console.log("permissionsFromFile", permissionsFromFile);
-
+  let policiesFromFile = rightsFromFile.policies;
+  let rolesFromFile = rightsFromFile.roles;
+  let permissionsFromFile = rightsFromFile.permissions
   let accessFromFile = rightsFromFile.access;
 
   // Update references in file data
@@ -164,6 +142,8 @@ export async function pushRights(services, schema, accountability, dryRun = fals
     return { ...roleFromFile, id: overwriteId };
   });
 
+  // TODO access måste också ha overwrite id
+
   /**
    *
    * Find which resources to delete,
@@ -195,29 +175,16 @@ export async function pushRights(services, schema, accountability, dryRun = fals
       return !accessFromFile.find((fileA) => fileA.id === a.id);
     })
     .map((a) => a.id);
+    
+    
 
-  const [existingRolesInput, initialRolesInput] = partition(
-    rolesFromFile,
-    (role) => idAlreadyExistsIn(currentRoles, role)
-  );
-  console.log("existingRolesInput", existingRolesInput);
-  console.log("initialRolesInput", initialRolesInput);
+  const [existingRolesInput, initialRolesInput] = partitionCreateUpdate(rolesFromFile, currentRoles);
+  
+  const [existingPoliciesInput, initialPoliciesInput] = partitionCreateUpdate(policiesFromFile, currentPolicies)
+  console.log("initialPoliciesInput", initialPoliciesInput);
 
-  const [existingPoliciesInput, initialPoliciesInput] = partition(
-    policiesFromFile,
-    (policy) => idAlreadyExistsIn(currentPolicies, policy)
-  );
-
-  // TODO system???
-  const [existingPermissionsInput, initialPermissionsInput] = partition(
-    permissionsFromFile,
-    (perm) => idAlreadyExistsIn(currentPermissions, perm)
-  );
-
-  const [existingAccessInput, initialAccessInput] = partition(
-    accessFromFile,
-    (a) => idAlreadyExistsIn(currentAccess, a)
-  );
+  const [existingPermissionsInput, initialPermissionsInput] = partitionCreateUpdate(permissionsFromFile, currentPermissions);
+  const [existingAccessInput, initialAccessInput] = partitionCreateUpdate(accessFromFile, currentAccess);
 
   if (!dryRun) {
     /**
@@ -314,6 +281,8 @@ export async function getCurrentRightsSetup(
     rolesService,
     accessService
   ) {
+    
+        
     const policies = await policiesService.readByQuery({
       limit: -1,
     });
@@ -326,14 +295,47 @@ export async function getCurrentRightsSetup(
     const access = await accessService.readByQuery({
       limit: -1,
     });
+
+    // Clear away any relation info which we'll
+    // re-create with access table below.
+    // All references to users will be scrapped
+    // since users don't carry over between envs.
     return {
-      policies,
+      policies: cleanUserRelations(policies).map((policy) => omit(policy, ['roles', 'permissions'])),
       permissions: permissions.filter((perm) => !perm.system),
-      roles,
-      access,
+      roles: cleanUserRelations(roles).map((role) => omit(role, ['policies'])),
+      access: cleanUserRelations(access),
     };
   }
+
+  function cleanUserRelations(arr) {
+    return arr.map((o) => {
+        const cleaned = omit(o, ['users']);
+        if (o.user) cleaned.user = null;
+        return cleaned;
+      });
+}
   
+
+  function partitionCreateUpdate(fromFiles, fromCurrent) { 
+    const [toUpdate, toCreate] = partition(
+        fromFiles,
+        (obj) =>  !!fromCurrent.find((item) => obj.id === item.id)
+        
+      );
+    
+      // Filter out any identical objects that
+      // doesn't need updating
+      return [toUpdate.filter(obj => {
+        const current = fromCurrent.find((item) => obj.id === item.id);
+        const _isEqual = isEqual(obj, current);
+        if(!_isEqual) {
+            console.log("!_isEqual", obj, current);
+        }
+        
+        return !_isEqual;
+      }), toCreate];
+ }
 
 function rmId(arr) {
   return arr.map((obj) => {

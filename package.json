@@ -57,6 +57,8 @@
   },
   "dependencies": {
     "@directus/composables": "^11.1.5",
+    "lodash.isequal": "^4.5.0",
+    "lodash.omit": "^4.5.0",
     "lodash.partition": "^4.6.0",
     "vue": "^3.5.13"
   }

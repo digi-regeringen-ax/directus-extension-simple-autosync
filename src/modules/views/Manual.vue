@@ -86,7 +86,7 @@
             <p>
               View what rights objects would be created, updated or deleted.
             </p>
-            <p>Note that existing objects will be updated regardless if there are differences.</p>
+            <!-- <p>Note that existing objects will be updated regardless if there are differences.</p> -->
             <v-button class="button" full-width @click="getRightsDiff()">
               <v-icon name="difference"/>
               <span>{{ rightsDiff ? 'Hide rights' : 'Show rights' }}</span>
