@@ -1,6 +1,7 @@
 import isEqual from "lodash.isequal";
 import partition from "lodash.partition";
 import omit from "lodash.omit";
+import pick from "lodash.pick";
 import {
   getEnvConfig,
   getSyncFilePath,
@@ -120,7 +121,16 @@ export async function pushRights(services, schema, accountability, dryRun = fals
       return p;
     });
 
-    return { ...policyFromFile, id: overwriteId };
+    const r = { ...policyFromFile, id: overwriteId };
+
+    // If the ID from file has been overwritten
+    // with the current system's, store it
+    // in a prop for info purposes
+    if(r.id !== policyFromFile.id) {
+        r._originalId = policyFromFile.id;
+    }
+
+    return r;
   });
 
   // Update references in file data
@@ -139,8 +149,35 @@ export async function pushRights(services, schema, accountability, dryRun = fals
       return a;
     });
 
-    return { ...roleFromFile, id: overwriteId };
+    const r = { ...roleFromFile, id: overwriteId };
+
+    // If the ID from file has been overwritten
+    // with the current system's, store it
+    // in a prop for info purposes
+    if(r.id !== roleFromFile.id) {
+        r._originalId = roleFromFile.id;
+    }
+
+    return r;
   });
+
+  accessFromFile = accessFromFile.map(fileAccessObj => {
+    const referencedRole = rolesFromFile.find(role => role.id === fileAccessObj.role) || {};
+    const referencedPolicy = policiesFromFile.find(policy => policy.id === fileAccessObj.policy) || {};
+    const matchingCurrentAccess = currentAccess.find(a => a.role === fileAccessObj.role && a.policy === fileAccessObj.policy);
+
+    // If it's an access row referencing either
+    // default admin role/policy or public
+    // role/policy, rewrite its ID
+    const isRefToDefaultAdmin = isDefaultAdminRole(referencedRole) && isDefaultAdminPolicy(referencedPolicy);
+    const isRefToDefaultPublic = fileAccessObj.role === null && isDefaultPublicPolicy(referencedPolicy);
+    if((isRefToDefaultAdmin || isRefToDefaultPublic) && matchingCurrentAccess) {
+        return { ...fileAccessObj, id: matchingCurrentAccess.id }
+    }
+
+    return fileAccessObj;
+  })
+
 
   // TODO access måste också ha overwrite id
 
@@ -251,25 +288,26 @@ export async function pushRights(services, schema, accountability, dryRun = fals
     const deletedAccessRes = await accessService.deleteMany(accessToDelete);
   }
 
+
   return {
     roles: {
-      created: initialRolesInput.map((r) => r.id),
-      updated: existingRolesInput.map((r) => r.id),
+      created: initialRolesInput.map((r) => pick(r, ['id', 'name', '_originalId'])),
+      updated: existingRolesInput.map((r) => pick(r, ['id', 'name', '_originalId'])),
       deleted: rolesToDelete,
     },
     policies: {
-      created: initialPoliciesInput.map((p) => p.id),
-      updated: existingPoliciesInput.map((p) => p.id),
+      created: initialPoliciesInput.map((r) => pick(r, ['id', 'name', '_originalId'])),
+      updated: existingPoliciesInput.map((r) => pick(r, ['id', 'name', '_originalId'])),
       deleted: policiesToDelete,
     },
     permissions: {
-      created: initialPermissionsInput.map((perm) => perm.id),
-      updated: existingPermissionsInput.map((perm) => perm.id),
+      created: initialPermissionsInput.map((r) => r.id),
+      updated: existingPermissionsInput.map((r) => r.id),
       deleted: permissionsToDelete,
     },
     access: {
-      created: initialAccessInput.map((a) => a.id),
-      updated: existingAccessInput.map((a) => a.id),
+      created: initialAccessInput.map((r) => pick(r, ['id', '_originalId'])),
+      updated: existingAccessInput.map((r) => pick(r, ['id', '_originalId'])),
       deleted: accessToDelete,
     },
   };
@@ -328,20 +366,12 @@ export async function getCurrentRightsSetup(
       // doesn't need updating
       return [toUpdate.filter(obj => {
         const current = fromCurrent.find((item) => obj.id === item.id);
-        const _isEqual = isEqual(obj, current);
-        if(!_isEqual) {
-            console.log("!_isEqual", obj, current);
-        }
-        
-        return !_isEqual;
+
+        // Compare with _originalId since it's a
+        // temporary, computed property
+        return !isEqual(omit(obj, '_originalId'), current);
       }), toCreate];
  }
 
-function rmId(arr) {
-  return arr.map((obj) => {
-    let r = { ...obj };
-    delete r.id;
-    return r;
-  });
-}
+
 
