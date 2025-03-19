@@ -2,6 +2,7 @@ import isEqual from "lodash.isequal";
 import partition from "lodash.partition";
 import omit from "lodash.omit";
 import pick from "lodash.pick";
+
 import {
   getEnvConfig,
   getSyncFilePath,
@@ -54,8 +55,14 @@ export async function pushRights(
     throw new Error("Rights functionality not enabled");
 
   const rightsFilePath = getSyncFilePath("rights", version);
-  const rightsFromFile = readJson(rightsFilePath);
+  const {
+    policies: policiesFromFile,
+    roles: rolesFromFile,
+    permissions: permissionsFromFile,
+    access: accessFromFile,
+  } = readJson(rightsFilePath);
 
+  // Get current stuff from database
   const {
     policies: currentPolicies,
     roles: currentRoles,
@@ -68,6 +75,7 @@ export async function pushRights(
     accessService
   );
 
+  // Figure out what roles/policies are default
   const defaultCurrentAdminPolicy = currentPolicies.find((p) =>
     isDefaultAdminPolicy(p)
   );
@@ -77,11 +85,6 @@ export async function pushRights(
   const defaultCurrentPublicPolicy = currentPolicies.find((p) =>
     isDefaultPublicPolicy(p)
   );
-
-  let policiesFromFile = rightsFromFile.policies;
-  let rolesFromFile = rightsFromFile.roles;
-  let permissionsFromFile = rightsFromFile.permissions;
-  let accessFromFile = rightsFromFile.access;
 
   // Update references in file data
   // to default policies from current system
@@ -146,6 +149,8 @@ export async function pushRights(
     return r;
   });
 
+  // Update the IDs of the many-to-many
+  // relations to match defaults
   accessFromFile = accessFromFile.map((fileAccessObj) => {
     const referencedRole =
       rolesFromFile.find((role) => role.id === fileAccessObj.role) || {};
@@ -173,8 +178,6 @@ export async function pushRights(
 
     return fileAccessObj;
   });
-
-  // TODO access måste också ha overwrite id
 
   /**
    *
@@ -208,6 +211,11 @@ export async function pushRights(
     })
     .map((a) => a.id);
 
+  /**
+   *
+   * Get separate lists of what to
+   * create and what to update
+   */
   const [existingRolesInput, initialRolesInput] = partitionCreateUpdate(
     rolesFromFile,
     currentRoles
@@ -220,6 +228,7 @@ export async function pushRights(
 
   const [existingPermissionsInput, initialPermissionsInput] =
     partitionCreateUpdate(permissionsFromFile, currentPermissions);
+
   const [existingAccessInput, initialAccessInput] = partitionCreateUpdate(
     accessFromFile,
     currentAccess
@@ -286,6 +295,9 @@ export async function pushRights(
     const deletedAccessRes = await accessService.deleteMany(accessToDelete);
   }
 
+  // Return the (expected) result,
+  // but only include some props
+  // for breivety 
   return {
     roles: {
       created: initialRolesInput.map((r) =>
@@ -351,7 +363,11 @@ export async function getCurrentRightsSetup(
   };
 }
 
-// TODO find better ways to accuratly determine defaults?
+// TODO figure out better ways to accuratly determine defaults?
+// As of know, defaults identification relies on that
+// you've left the default's (admin/public) metadata untouched.
+// Note that nothing will break if you add custom permissions
+// to the default policies etc.
 const isDefaultAdminPolicy = (policy) =>
   policy.description === "$t:admin_description" && policy.admin_access;
 const isDefaultPublicPolicy = (policy) =>
@@ -361,13 +377,21 @@ const isDefaultAdminRole = (role) =>
 
 function cleanUserRelations(arr) {
   return arr.map((o) => {
+
+    // Never include list of user IDs
     const cleaned = omit(o, ["users"]);
+
+    // Access has optional 'user' reference
     if (o.user) cleaned.user = null;
+
     return cleaned;
   });
 }
 
 function partitionCreateUpdate(fromFiles, fromCurrent) {
+  // If an ID already exists in database,
+  // set to update it. Otherwise it will
+  // be created. 
   const [toUpdate, toCreate] = partition(
     fromFiles,
     (obj) => !!fromCurrent.find((item) => obj.id === item.id)
