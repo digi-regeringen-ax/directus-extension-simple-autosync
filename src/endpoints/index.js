@@ -22,8 +22,10 @@ const checkPermission = () => async (req, res, next) => {
     return next();
 };
 
+const BASE = "simple-autosync";
+
 export default defineEndpoint({
-    id: "simple-autosync",
+    id: BASE,
     handler: async (router, context) => {
         const { logger } = context;
 
@@ -68,23 +70,24 @@ export default defineEndpoint({
                         latest: latestExists ? latestFilepath : null,
                     },
                     version,
-                })
-                .end();
+                    apiBaseUrl: `/${BASE}`
+                });
         });
 
         router.get(
-            "/snapshot-file",
+            "/download/:file",
             checkPermission(context),
             async (req, res) => {
                 const version = await getVersion(req);
+                const file = req.params.file;
                 try {
-                    const filepath = getSyncFilePath("snapshot", version);
+                    const filepath = getSyncFilePath(file, version);
                     return res.download(filepath);
                 } catch (e) {
-                    logger.error(e, `${LP} snapshot-file`);
+                    logger.error(e, `${LP} file/${file}`);
                     return res
                         .status(500)
-                        .send("Failed to read snapshot file!");
+                        .send(`Failed to read ${file} file!`);
                 }
             }
         );
@@ -117,7 +120,7 @@ export default defineEndpoint({
                 r.snapshot = snapshot;
                 r.success = success;
 
-                return res.status(status).json(r).end();
+                return res.status(status).json(r);
             }
         );
 
@@ -160,7 +163,7 @@ export default defineEndpoint({
                 r.success = success;
                 r.diff = diff;
 
-                return res.status(status).json(r).end();
+                return res.status(status).json(r);
             }
         );
 
@@ -203,7 +206,7 @@ export default defineEndpoint({
 
                 r.success = success;
 
-                return res.status(status).json(r).end();
+                return res.status(status).json(r);
             }
         );
 
@@ -255,7 +258,7 @@ export default defineEndpoint({
 
                 r.success = success;
 
-                return res.status(status).json(r).end();
+                return res.status(status).json(r);
             }
         );
     },
