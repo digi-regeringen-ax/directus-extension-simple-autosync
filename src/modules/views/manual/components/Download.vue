@@ -2,7 +2,7 @@
     <h2 class="heading">Download</h2>
     <div class="form-grid">
         <div :class="showRights ? 'half' : 'full'">
-            <h3 class="small-heading">Snapshot</h3>
+            <h3 class="small-heading">Data model</h3>
             <p>
                 Download the latest currently stored snapshot file from server
                 disk.

@@ -3,7 +3,7 @@
         <h2 class="heading">Manual push</h2>
         <div class="form-grid">
             <div :class="showRights ? 'half' : 'full'">
-                <h3 class="small-heading">Snapshot</h3>
+                <h3 class="small-heading">Data model</h3>
                 <p>
                     Apply latest data model snapshot file from disk to database.
                 </p>
@@ -21,7 +21,7 @@
                 </p>
                 <v-button class="sa-button" full-width @click="applyRights()">
                     <v-icon name="upload" />
-                    <span>Apply rights</span>
+                    <span>Apply rights file</span>
                 </v-button>
                 <p v-if="pushRightsMsg">{{ pushRightsMsg }}</p>
             </div>

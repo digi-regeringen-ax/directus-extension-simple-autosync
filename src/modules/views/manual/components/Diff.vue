@@ -3,14 +3,14 @@
         <h2 class="heading">Diff</h2>
         <div class="form-grid">
             <div :class="showRights ? 'half' : 'full'">
-                <h3 class="small-heading">Snapshot</h3>
+                <h3 class="small-heading">Data model</h3>
                 <p>
                     View differences between current data model and the latest
                     snapshot file on disk.
                 </p>
                 <v-button class="sa-button" full-width @click="getDiff()">
                     <v-icon name="difference" />
-                    <span>{{ diff ? "Hide diff" : "Show diff" }}</span>
+                    <span>{{ diff ? "Hide snapshot diff" : "Show snapshot diff" }}</span>
                 </v-button>
                 <p v-if="diffMsg">{{ diffMsg }}</p>
             </div>
@@ -24,7 +24,7 @@
                 <v-button class="sa-button" full-width @click="getRightsDiff()">
                     <v-icon name="difference" />
                     <span>{{
-                        rightsDiff ? "Hide rights" : "Show rights"
+                        rightsDiff ? "Hide rights diff" : "Show rights diff"
                     }}</span>
                 </v-button>
                 <p v-if="rightsDiffMsg">{{ rightsDiffMsg }}</p>
