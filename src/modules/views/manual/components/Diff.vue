@@ -152,7 +152,7 @@ export default {
 
 <style scoped>
 .codebox {
-  background-color: rgba(0, 0, 0, 0.05);
+  background-color: rgba(0,0,0,0.05);
   padding: 8px;
   position: relative;
 }
@@ -164,6 +164,14 @@ export default {
   line-height: 1;
   color: #000;
 }
+
+.dark .codebox {
+    background-color: rgba(255,255,255, 0.05);
+}
+.dark .codebox pre {
+    color: #fff;
+}
+
 
 .codebox .diffcopy {
   position: absolute;
