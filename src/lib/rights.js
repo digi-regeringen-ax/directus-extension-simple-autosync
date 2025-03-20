@@ -1,7 +1,7 @@
-import isEqual from "lodash.isequal";
-import partition from "lodash.partition";
-import omit from "lodash.omit";
-import pick from "lodash.pick";
+import isEqual from "lodash/isequal";
+import partition from "lodash/partition";
+import omit from "lodash/omit";
+import pick from "lodash/pick";
 
 import {
     getEnvConfig,
