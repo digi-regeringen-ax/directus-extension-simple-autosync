@@ -1,4 +1,4 @@
-import ModuleComponent from "./views/Manual.vue";
+import ModuleComponent from "./views/manual/Manual.vue";
 import { defineModule } from "@directus/extensions-sdk";
 export default defineModule({
     id: "simple-autosync",
