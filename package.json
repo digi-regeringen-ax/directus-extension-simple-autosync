@@ -2,7 +2,7 @@
   "name": "directus-extension-simple-autosync",
   "description": "An extension for pulling and pushing snapshot configurations between Directus environments.",
   "icon": "extension",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "keywords": [
     "directus",
     "directus-extension",
@@ -52,7 +52,7 @@
     "add": "directus-extension add"
   },
   "devDependencies": {
-    "@directus/extensions-sdk": "13.0.0"
+    "@directus/extensions-sdk": "^13.0.0"
   },
   "dependencies": {
     "@directus/composables": "^11.1.5",
