@@ -79,13 +79,12 @@ export default {
         }
 
         async function pullFiles() {
-            const warning =
-                "Are you sure? If there is already a snapshot file present, it will be overwritten.";
-            if (confirm(warning)) {
+            const maybeWarning = !config.AUTOSYNC_MULTIFILE ? confirm("Are you sure? If there is already a snapshot file present, it will be overwritten.") : true;
+            if (maybeWarning) {
                 pullMsg.value = "";
                 api.post(`${config.apiBaseUrl}/trigger/pull`)
                     .then(() => {
-                        pullMsg.value = "Successfully wrote snapshot!";
+                        pullMsg.value = "Successfully wrote file(s)!";
                         emit("updateEnvConfig");
                     })
                     .catch((e) => {
