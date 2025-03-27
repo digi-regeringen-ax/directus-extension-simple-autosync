@@ -46,7 +46,7 @@ export default {
 
         async function applySnapshot() {
             const warning =
-                "Are you sure? Your current data model will be overwritten.";
+                "Are you sure? Your data model currently in the database will be overwritten.";
             if (confirm(warning)) {
                 pushMsg.value = "";
                 api.post(`${config.apiBaseUrl}/trigger/push-snapshot`, { dry_run: false })
@@ -64,7 +64,7 @@ export default {
 
         async function applyRights() {
             const warning =
-                "Are you sure? Your current roles, permissions and policies will be overwritten.";
+                "Are you sure? Your roles, permissions and policies currently in the database will be overwritten.";
             if (confirm(warning)) {
                 pushRightsMsg.value = "";
                 api.post(`${config.apiBaseUrl}/trigger/push-rights`, { dry_run: false })
