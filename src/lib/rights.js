@@ -278,22 +278,30 @@ export async function pushRights(
         /**
          *
          * Update existing rights stuff.
-         * 
+         *
          * Can't simply use updateMany here, since
          * it doesn't support separate payloads.
          */
-        const existingRolesRes = await Promise.all(existingRolesInput.map(async role => {
-            return await rolesService.updateOne(role.id, role);
-        }));
-        const existingPoliciesRes = await Promise.all(existingPoliciesInput.map(async policy => {
-            return await policiesService.updateOne(policy.id, policy);
-        }));
-        const existingPermissionsRes = await Promise.all(existingPermissionsInput.map(async perm => {
-            return await permissionsService.updateOne(perm.id, perm);
-        }));
-        const existingAccessRes = await Promise.all(existingAccessInput.map(async a => {
-            return await accessService.updateOne(a.id, a);
-        }));
+        const existingRolesRes = await Promise.all(
+            existingRolesInput.map(async (role) => {
+                return await rolesService.updateOne(role.id, role);
+            })
+        );
+        const existingPoliciesRes = await Promise.all(
+            existingPoliciesInput.map(async (policy) => {
+                return await policiesService.updateOne(policy.id, policy);
+            })
+        );
+        const existingPermissionsRes = await Promise.all(
+            existingPermissionsInput.map(async (perm) => {
+                return await permissionsService.updateOne(perm.id, perm);
+            })
+        );
+        const existingAccessRes = await Promise.all(
+            existingAccessInput.map(async (a) => {
+                return await accessService.updateOne(a.id, a);
+            })
+        );
 
         /**
          *
