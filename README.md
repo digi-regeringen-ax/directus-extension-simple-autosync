@@ -15,6 +15,9 @@ hook parts.
 1. `npm i directus-extension-simple-autosync`
 2. Adjust your environment variables depending on desired behavior as described below.
 
+### With Docker
+If you're running Directus in a Docker container, make sure that the sync files are included in the container. For example, in your Dockerfile: `COPY ./autosync-config /directus/autosync-config`
+
 ## Configuration
 
 Control what the extension does by setting environment variables in your Directus setup.
