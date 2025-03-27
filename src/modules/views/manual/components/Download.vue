@@ -9,7 +9,7 @@
             </p>
             <v-button
                 class="sa-button"
-                :disabled="isDisabled"
+                :disabled="isSnapshotDisabled"
                 full-width
                 :href="snapshotDownloadLink"
             >
@@ -25,7 +25,7 @@
             </p>
             <v-button
                 class="sa-button"
-                :disabled="isDisabled"
+                :disabled="isRightsDisabled"
                 full-width
                 :href="rightsDownloadLink"
             >
@@ -44,19 +44,20 @@ export default {
     },
 
     setup(props) {
-        const { config } = props;
         const snapshotDownloadLink = computed(
-            () => `${config.apiBaseUrl}/download/snapshot`
+            () => `${props.config.apiBaseUrl}/download/snapshot`
         );
         const rightsDownloadLink = computed(
-            () => `${config.apiBaseUrl}/download/rights`
+            () => `${props.config.apiBaseUrl}/download/rights`
         );
 
         return {
-            showRights: config.AUTOSYNC_INCLUDE_RIGHTS,
+            showRights: props.config.AUTOSYNC_INCLUDE_RIGHTS,
+            isSnapshotDisabled: !props.config.filepaths.latestSnapshot,
+            isRightsDisabled: !props.config.filepaths.latestRights, // TODO varför uppdateras inte detta efter emit get config
             snapshotDownloadLink,
             rightsDownloadLink,
-            isDisabled: !config.filepaths.latest,
+
         };
     },
 };

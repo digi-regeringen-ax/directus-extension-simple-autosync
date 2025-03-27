@@ -57,8 +57,11 @@ export default defineEndpoint({
                 versionPlaceholder,
                 timestampPlaceholder
             );
-            const latestFilepath = getSyncFilePath("snapshot", version);
-            const latestExists = fs.existsSync(latestFilepath);
+            const latestSnapshotFilepath = getSyncFilePath("snapshot", version);
+            const latestSnapshotExists = fs.existsSync(latestSnapshotFilepath);
+
+            const latestRightsFilepath = getSyncFilePath("rights", version);
+            const latestRightsExists = fs.existsSync(latestRightsFilepath);
             return res
                 .json({
                     ...envConfig,
@@ -67,7 +70,8 @@ export default defineEndpoint({
                         rights: envConfig.AUTOSYNC_INCLUDE_RIGHTS
                             ? rightsExampleFilepath
                             : null,
-                        latest: latestExists ? latestFilepath : null,
+                        latestSnapshot: latestSnapshotExists ? latestSnapshotFilepath : null,
+                        latestRights: latestRightsExists ? latestRightsFilepath : null
                     },
                     version,
                     apiBaseUrl: `/${BASE}`

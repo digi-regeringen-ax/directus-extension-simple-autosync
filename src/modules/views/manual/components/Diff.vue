@@ -8,7 +8,7 @@
                     View differences between current data model and the latest
                     snapshot file on disk.
                 </p>
-                <v-button class="sa-button" full-width @click="getDiff()">
+                <v-button class="sa-button" :disabled="isSnapshotDisabled" full-width @click="getDiff()">
                     <v-icon name="difference" />
                     <span>{{ diff ? "Hide snapshot diff" : "Show snapshot diff" }}</span>
                 </v-button>
@@ -21,7 +21,7 @@
                     deleted.
                 </p>
                 <!-- <p>Note that existing objects will be updated regardless if there are differences.</p> -->
-                <v-button class="sa-button" full-width @click="getRightsDiff()">
+                <v-button class="sa-button" :disabled="isRightsDisabled" full-width @click="getRightsDiff()">
                     <v-icon name="difference" />
                     <span>{{
                         rightsDiff ? "Hide rights diff" : "Show rights diff"
@@ -137,6 +137,8 @@ export default {
 
         return {
             showRights: config.AUTOSYNC_INCLUDE_RIGHTS,
+            isSnapshotDisabled: !config.filepaths.latestSnapshot,
+            isRightsDisabled: !config.filepaths.latestRights,
             diff,
             rightsDiff,
             diffMsg,

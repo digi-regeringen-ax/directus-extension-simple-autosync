@@ -7,7 +7,7 @@
                 <p>
                     Apply latest data model snapshot file from disk to database.
                 </p>
-                <v-button class="sa-button" full-width @click="applySnapshot()">
+                <v-button class="sa-button" :disabled="isSnapshotDisabled" full-width @click="applySnapshot()">
                     <v-icon name="upload" />
                     <span>Apply snaphot file</span>
                 </v-button>
@@ -19,7 +19,7 @@
                     Apply latest policies, roles and permissions from file on
                     disk to database.
                 </p>
-                <v-button class="sa-button" full-width @click="applyRights()">
+                <v-button class="sa-button" :disabled="isRightsDisabled" full-width @click="applyRights()">
                     <v-icon name="upload" />
                     <span>Apply rights file</span>
                 </v-button>
@@ -80,10 +80,13 @@ export default {
 
         return {
             showRights: config.AUTOSYNC_INCLUDE_RIGHTS,
+            isSnapshotDisabled: !config.filepaths.latestSnapshot,
+            isRightsDisabled: !config.filepaths.latestRights,
             pushMsg,
             pushRightsMsg,
             applySnapshot,
             applyRights,
+
         };
     },
 };

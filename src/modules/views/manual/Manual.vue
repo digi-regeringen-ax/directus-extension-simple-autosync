@@ -46,11 +46,16 @@
                                 config.filepaths.latest
                             }}</span>
                         </li>
-                        <li v-if="!config.filepaths.latest">
+                        <li v-if="!config.filepaths.latestSnapshot">
                             <span class="bold"
-                                >⚠ There is no snapshot on disk for this version
-                                ({{ config.version }})</span
+                                >⚠ There is no data model snapshot on disk for this version
+                                ({{ config.version }}).</span
                             >
+                        </li>
+                        <li v-if="config.filepaths.rights && !config.filepaths.latestRights">
+                            <span class="bold"
+                                >⚠ There is no rights file on disk.
+                                </span>
                         </li>
                     </ul>
                 </div>
