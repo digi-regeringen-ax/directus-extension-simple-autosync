@@ -35,7 +35,7 @@ export async function pullRights(
     );
 
     const rightsFilePath = getSyncFilePath("rights", version, currentTimeStamp);
-    writeJson(rightsFilePath, rightsData);
+    writeJson(rightsFilePath, rewriteDefaultsToPlaceholderIds(rightsData));
 
     return rightsData;
 }
@@ -392,18 +392,93 @@ export async function getCurrentRightsSetup(
     };
 }
 
+const DEFAULT_ID_PLACEHOLDERS = {
+    adminPolicy: "_default-admin-policy",
+    publicPolicy: "_default-public-policy",
+    adminRole: "_default-admin-role",
+    adminRelation: "_default-admin-relation",
+    publicRelation: "_default-public-relation",
+};
+
 // TODO figure out better ways to accuratly determine defaults?
 // As of know, defaults identification relies on that
 // you've left the default's (admin/public) metadata untouched.
 // Note that nothing will break if you add custom permissions
 // to the default policies etc.
 const isDefaultAdminPolicy = (policy) =>
-    policy.description === "$t:admin_description" && policy.admin_access;
+    policy.id === DEFAULT_ID_PLACEHOLDERS.adminPolicy ||
+    (policy.description === "$t:admin_description" && policy.admin_access);
 const isDefaultPublicPolicy = (policy) =>
-    policy.description === "$t:public_description" && !policy.admin_access;
+    policy.id === DEFAULT_ID_PLACEHOLDERS.publicPolicy ||
+    (policy.description === "$t:public_description" && !policy.admin_access);
 const isDefaultAdminRole = (role) =>
-    role.description === "$t:admin_description" &&
-    role.name === "Administrator";
+    role.id === DEFAULT_ID_PLACEHOLDERS.adminRole ||
+    (role.description === "$t:admin_description" &&
+        role.name === "Administrator");
+
+function rewriteDefaultsToPlaceholderIds(currentRightsData) {
+    let defaultAdminPolicyOriginalId;
+    let defaultPublicPolicyOriginalId;
+    let defaultAdminRoleOriginalId;
+
+    // Replace all IDs of default policies and
+    // roles to common placeholders. This is
+    // to avoid having them change constantly
+    // in sync files when you're collaborating.
+    const rewrittenRolesAndPolicies = {
+        ...currentRightsData,
+        policies: currentRightsData.policies.map((policy) => {
+            if (isDefaultAdminPolicy(policy)) {
+                defaultAdminPolicyOriginalId = policy.id;
+                return { ...policy, id: DEFAULT_ID_PLACEHOLDERS.adminPolicy };
+            }
+            if (isDefaultPublicPolicy(policy)) {
+                defaultPublicPolicyOriginalId = policy.id;
+                return { ...policy, id: DEFAULT_ID_PLACEHOLDERS.publicPolicy };
+            }
+            return policy;
+        }),
+        roles: currentRightsData.roles.map((role) => {
+            if (isDefaultAdminRole(role)) {
+                defaultAdminRoleOriginalId = role.id;
+                return { ...role, id: DEFAULT_ID_PLACEHOLDERS.adminRole };
+            }
+            return role;
+        }),
+    };
+
+    // Update the references to default policies/roles
+    // in the access relations before returning
+    return {
+        ...rewrittenRolesAndPolicies,
+        access: rewrittenRolesAndPolicies.access.map((a) => {
+            let updatedAccessRow = { ...a };
+            if (a.role === defaultAdminRoleOriginalId) {
+                updatedAccessRow = {
+                    ...updatedAccessRow,
+                    role: DEFAULT_ID_PLACEHOLDERS.adminRole,
+                };
+            }
+
+            if (a.policy === defaultAdminPolicyOriginalId) {
+                return {
+                    ...updatedAccessRow,
+                    policy: DEFAULT_ID_PLACEHOLDERS.adminPolicy,
+                    id: DEFAULT_ID_PLACEHOLDERS.adminRelation,
+                };
+            }
+            if (a.policy === defaultPublicPolicyOriginalId) {
+                return {
+                    ...updatedAccessRow,
+                    policy: DEFAULT_ID_PLACEHOLDERS.publicPolicy,
+                    id: DEFAULT_ID_PLACEHOLDERS.publicRelation,
+                };
+            }
+
+            return updatedAccessRow;
+        }),
+    };
+}
 
 function cleanUserRelations(arr) {
     return arr.map((o) => {
