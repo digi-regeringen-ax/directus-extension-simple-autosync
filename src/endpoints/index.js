@@ -109,6 +109,7 @@ export default defineEndpoint({
                     const pullRes = await pullSyncFiles(
                         context.services,
                         req.schema,
+                        context.emitter,
                         req.accountability,
                         await getVersion(req)
                     );
@@ -152,6 +153,7 @@ export default defineEndpoint({
                     diff = await pushSnapshot(
                         context.services,
                         req.schema,
+                        context.emitter,
                         req.accountability,
                         dryRun,
                         version
@@ -195,6 +197,7 @@ export default defineEndpoint({
                     const pushRightsRes = await pushRights(
                         context.services,
                         req.schema,
+                        context.emitter,
                         req.accountability,
                         dryRun,
                         version
@@ -249,7 +252,8 @@ export default defineEndpoint({
                         policiesService,
                         permissionsService,
                         rolesService,
-                        accessService
+                        accessService,
+                        context.emitter
                     );
                     r.rights = rights;
                     success = true;

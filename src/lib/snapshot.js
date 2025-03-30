@@ -8,13 +8,15 @@ import {
     getCurrentTimestamp,
     readJson,
     writeJson,
+    HP,
 } from "./helpers.js";
 
-export async function pullSyncFiles(services, schema, accountability, version) {
+export async function pullSyncFiles(services, schema, emitter, accountability, version) {
     const currentTimeStamp = getCurrentTimestamp();
     const snapshot = await pullSnapshot(
         services,
         schema,
+        emitter,
         accountability,
         version,
         currentTimeStamp
@@ -26,6 +28,7 @@ export async function pullSyncFiles(services, schema, accountability, version) {
         r.rights = await pullRights(
             services,
             schema,
+            emitter,
             accountability,
             version,
             currentTimeStamp
@@ -64,6 +67,7 @@ export async function pushSnapshot(
 async function pullSnapshot(
     services,
     schema,
+    emitter,
     accountability,
     version,
     currentTimestamp
@@ -72,6 +76,7 @@ async function pullSnapshot(
     const schemaService = new SchemaService({ accountability, schema });
 
     const snapshot = await schemaService.snapshot();
+    const filteredSnapshot = await emitter.emitFilter(`${HP}.snapshot.pull`, snapshot);
 
     const filePath = getSyncFilePath("snapshot", version, currentTimestamp);
 
@@ -80,7 +85,7 @@ async function pullSnapshot(
         fs.mkdirSync(dir, { recursive: true });
     }
 
-    writeJson(filePath, snapshot);
+    writeJson(filePath, filteredSnapshot);
 
-    return snapshot;
+    return filteredSnapshot;
 }
