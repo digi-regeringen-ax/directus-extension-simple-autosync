@@ -369,7 +369,6 @@ export async function getCurrentRightsSetup(
     accessService,
     emitter
 ) {
-    const envConfig = getEnvConfig();
     const policies = await policiesService.readByQuery({
         limit: -1,
     });
