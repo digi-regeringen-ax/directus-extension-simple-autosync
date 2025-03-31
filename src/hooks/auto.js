@@ -4,7 +4,7 @@ import * as snapshot from "../lib/snapshot";
 import * as rights from "../lib/rights";
 
 export default defineHook(
-    async ({ init, action }, { services, getSchema, logger }) => {
+    async ({ init, action }, { services, getSchema, logger, emitter }) => {
         const { SchemaService, ServerService } = services;
 
         // Fake admin since this is an internal process
@@ -75,6 +75,7 @@ export default defineHook(
                 await snapshot.pushSnapshot(
                     services,
                     schema,
+                    emitter,
                     accountability,
                     false,
                     versionData.version
@@ -83,6 +84,7 @@ export default defineHook(
                     await rights.pushRights(
                         services,
                         schema,
+                        emitter,
                         accountability,
                         false,
                         versionData.version
@@ -98,6 +100,7 @@ export default defineHook(
                 await snapshot.pullSyncFiles(
                     services,
                     schema,
+                    emitter,
                     accountability,
                     versionData.version
                 );
