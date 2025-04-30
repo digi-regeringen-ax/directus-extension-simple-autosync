@@ -37,7 +37,7 @@ export async function pullSyncFiles(services, schema, emitter, accountability, v
         );
     }
     if (envConfig.AUTOSYNC_INCLUDE_TRANSLATIONS) {
-        r.pullTranslationsranslations = await pullTranslations(
+        r.translations = await pullTranslations(
             services,
             schema,
             emitter,
