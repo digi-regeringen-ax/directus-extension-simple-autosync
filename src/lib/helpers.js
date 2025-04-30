@@ -1,5 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
+import isEqual from "lodash/isequal";
+import partition from "lodash/partition";
+import omit from "lodash/omit";
 
 export function getSyncFilePath(file, version = "unknown", timestamp = "") {
     const { AUTOSYNC_FILE_PATH: dir, AUTOSYNC_MULTIFILE } = getEnvConfig();
@@ -66,6 +69,9 @@ export function getEnvConfig() {
         AUTOSYNC_INCLUDE_RIGHTS: isStringTruthy(
             process.env.AUTOSYNC_INCLUDE_RIGHTS
         ),
+        AUTOSYNC_INCLUDE_TRANSLATIONS: isStringTruthy(
+            process.env.AUTOSYNC_INCLUDE_TRANSLATIONS
+        ),
     };
 }
 
@@ -77,6 +83,29 @@ export function writeJson(filePath, obj) {
 export function readJson(filePath) {
     const snapshot = fs.readFileSync(filePath);
     return JSON.parse(snapshot);
+}
+
+export function partitionCreateUpdate(fromFiles, fromCurrent) {
+    // If an ID already exists in database,
+    // set to update it. Otherwise it will
+    // be created.
+    const [toUpdate, toCreate] = partition(
+        fromFiles,
+        (obj) => !!fromCurrent.find((item) => obj.id === item.id)
+    );
+
+    // Filter out any identical objects that
+    // doesn't need updating
+    return [
+        toUpdate.filter((obj) => {
+            const current = fromCurrent.find((item) => obj.id === item.id);
+
+            // Compare with _originalId since that's a
+            // temporary, computed property
+            return !isEqual(omit(obj, "_originalId"), current);
+        }),
+        toCreate,
+    ];
 }
 
 // log prefix

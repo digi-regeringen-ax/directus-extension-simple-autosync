@@ -2,6 +2,7 @@ import path from "node:path";
 import fs from "node:fs";
 
 import { pullRights } from "./rights.js";
+import { pullTranslations } from "./translations.js";
 import {
     getEnvConfig,
     getSyncFilePath,
@@ -12,6 +13,7 @@ import {
 } from "./helpers.js";
 
 export async function pullSyncFiles(services, schema, emitter, accountability, version) {
+    const envConfig = getEnvConfig();
     const currentTimeStamp = getCurrentTimestamp();
     const snapshot = await pullSnapshot(
         services,
@@ -24,8 +26,18 @@ export async function pullSyncFiles(services, schema, emitter, accountability, v
     const r = {
         snapshot,
     };
-    if (getEnvConfig().AUTOSYNC_INCLUDE_RIGHTS) {
+    if (envConfig.AUTOSYNC_INCLUDE_RIGHTS) {
         r.rights = await pullRights(
+            services,
+            schema,
+            emitter,
+            accountability,
+            version,
+            currentTimeStamp
+        );
+    }
+    if (envConfig.AUTOSYNC_INCLUDE_TRANSLATIONS) {
+        r.pullTranslationsranslations = await pullTranslations(
             services,
             schema,
             emitter,

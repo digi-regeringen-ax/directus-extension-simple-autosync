@@ -8,6 +8,7 @@ import {
 } from "../lib/helpers";
 import { pullSyncFiles, pushSnapshot } from "../lib/snapshot.js";
 import { pushRights, getCurrentRightsSetup } from "../lib/rights.js";
+import { pushTranslations, getCurrentTranslations } from "../lib/translations.js";
 
 // Must be admin to access these endpoints
 const checkPermission = () => async (req, res, next) => {
@@ -57,11 +58,19 @@ export default defineEndpoint({
                 versionPlaceholder,
                 timestampPlaceholder
             );
+            const translationsExampleFilepath = getSyncFilePath(
+                "translations",
+                versionPlaceholder,
+                timestampPlaceholder
+            );
             const latestSnapshotFilepath = getSyncFilePath("snapshot", version);
             const latestSnapshotExists = fs.existsSync(latestSnapshotFilepath);
 
             const latestRightsFilepath = getSyncFilePath("rights", version);
             const latestRightsExists = fs.existsSync(latestRightsFilepath);
+
+            const latestTranslationsFilepath = getSyncFilePath("translations", version);
+            const latestTranslationsExists = fs.existsSync(latestTranslationsFilepath);
             return res
                 .json({
                     ...envConfig,
@@ -70,8 +79,12 @@ export default defineEndpoint({
                         rights: envConfig.AUTOSYNC_INCLUDE_RIGHTS
                             ? rightsExampleFilepath
                             : null,
+                        translations: envConfig.AUTOSYNC_INCLUDE_TRANSLATIONS
+                            ? translationsExampleFilepath
+                            : null,
                         latestSnapshot: latestSnapshotExists ? latestSnapshotFilepath : null,
-                        latestRights: latestRightsExists ? latestRightsFilepath : null
+                        latestRights: latestRightsExists ? latestRightsFilepath : null,
+                        latestTranslations: latestTranslationsExists ? latestTranslationsFilepath : null,
                     },
                     version,
                     apiBaseUrl: `/${BASE}`
@@ -217,8 +230,51 @@ export default defineEndpoint({
             }
         );
 
+        router.post(
+            "/trigger/push-translations",
+            checkPermission(context),
+            async (req, res) => {
+                let success = false;
+                let status = 500;
+
+                /**
+                 *
+                 * If true, endpoint will only return the
+                 * objects that would update, without
+                 * changing anything.
+                 *
+                 */
+                const dryRunParam = (req.body?.dry_run || "") + ""; // to string
+                const dryRun = isStringTruthy(dryRunParam);
+
+                const version = await getVersion(req);
+
+                let r = { error: null };
+                try {
+                    const pushTranslationsRes = await pushTranslations(
+                        context.services,
+                        req.schema,
+                        req.accountability,
+                        dryRun,
+                        version
+                    );
+                    r = { ...r, translations: pushTranslationsRes };
+                    success = true;
+                    status = 200;
+                } catch (e) {
+                    logger.error(e, `${LP} trigger/push-translations`);
+                    if (e.status) status = e.status;
+                    r.error = e;
+                }
+
+                r.success = success;
+
+                return res.status(status).json(r);
+            }
+        );
+
         router.get(
-            "/current-rights",
+            "/current/rights",
             checkPermission(context),
             async (req, res) => {
                 const {
@@ -259,7 +315,39 @@ export default defineEndpoint({
                     success = true;
                     status = 200;
                 } catch (e) {
-                    logger.error(e, `${LP} current-rights`);
+                    logger.error(e, `${LP} current/rights`);
+                    if (e.status) status = e.status;
+                    r.error = e;
+                }
+
+                r.success = success;
+
+                return res.status(status).json(r);
+            }
+        );
+
+        router.get(
+            "/current/translations",
+            checkPermission(context),
+            async (req, res) => {
+                const {
+                    TranslationsService
+                } = context.services;
+                const translationsService = new TranslationsService({
+                    accountability: req.accountability,
+                    schema: req.schema,
+                });
+                let status = 500;
+                let success = false;
+                let r = { error: null, rights: null };
+
+                try {
+                    const currentTranslations = await getCurrentTranslations(translationsService);
+                    r.translations = currentTranslations;
+                    success = true;
+                    status = 200;
+                } catch (e) {
+                    logger.error(e, `${LP} current/translations`);
                     if (e.status) status = e.status;
                     r.error = e;
                 }

@@ -24,6 +24,12 @@
                             }}</span>
                         </li>
                         <li>
+                            Inclusion of translations is
+                            <span class="bold">{{
+                                !!config.AUTOSYNC_INCLUDE_TRANSLATIONS ? "on" : "off"
+                            }}</span>
+                        </li>
+                        <li>
                             Snapshot filepath is
                             <span class="bold">{{
                                 config.filepaths.snapshot
@@ -33,6 +39,12 @@
                             Rights filepath is
                             <span class="bold">{{
                                 config.filepaths.rights
+                            }}</span>
+                        </li>
+                        <li v-if="config.filepaths.translations">
+                            Translations filepath is
+                            <span class="bold">{{
+                                config.filepaths.translations
                             }}</span>
                         </li>
                         <li
@@ -55,6 +67,11 @@
                         <li v-if="config.filepaths.rights && !config.filepaths.latestRights">
                             <span class="bold"
                                 >⚠ There is no rights file on disk.
+                                </span>
+                        </li>
+                        <li v-if="config.filepaths.translations && !config.filepaths.latestTranslations">
+                            <span class="bold"
+                                >⚠ There is no translations file on disk.
                                 </span>
                         </li>
                     </ul>

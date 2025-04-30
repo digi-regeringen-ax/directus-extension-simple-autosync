@@ -2,7 +2,7 @@
     <div>
         <h2 class="heading">Diff</h2>
         <div class="form-grid">
-            <div :class="showRights ? 'half' : 'full'">
+            <div :class="(showRights || showTranslations) ? 'half' : 'full'">
                 <h3 class="small-heading">Data model</h3>
                 <p>
                     View differences between current data model and the latest
@@ -28,6 +28,19 @@
                     }}</span>
                 </v-button>
                 <p v-if="rightsDiffMsg">{{ rightsDiffMsg }}</p>
+            </div>
+            <div class="half" v-if="showTranslations">
+                <h3 class="small-heading">Translations</h3>
+                <p>
+                    View what translations objects would be created or updated. 
+                </p>
+                <v-button class="sa-button" :disabled="isTranslationsDisabled" full-width @click="getTranslationsDiff()">
+                    <v-icon name="difference" />
+                    <span>{{
+                        translationsDiff ? "Hide translations diff" : "Show translations diff"
+                    }}</span>
+                </v-button>
+                <p v-if="translationsDiffMsg">{{ translationsDiffMsg }}</p>
             </div>
         </div>
         <div class="form-grid" v-if="diff">
@@ -62,6 +75,20 @@
                 <pre>{{ toJson(rightsDiff) }}</pre>
             </div>
         </div>
+        <div class="form-grid" v-if="translationsDiff">
+            <div class="codebox full">
+                <v-button
+                    kind="primary"
+                    class="diffcopy"
+                    outlined
+                    small
+                    @click="() => jsonToClipboard(translationsDiff)"
+                    >Copy to clipboard
+                </v-button>
+
+                <pre>{{ toJson(translationsDiff) }}</pre>
+            </div>
+        </div>
     </div>
 </template>
 
@@ -81,9 +108,12 @@ export default {
 
         const diff = ref(null);
         const rightsDiff = ref(null);
+        const translationsDiff = ref(null);
 
         const diffMsg = ref("");
         const rightsDiffMsg = ref("");
+        const translationsDiffMsg = ref("");
+
 
         async function getDiff() {
             const hasPreviousDiff = !!diff.value;
@@ -92,6 +122,8 @@ export default {
             diff.value = null;
             rightsDiffMsg.value = "";
             rightsDiff.value = null;
+            translationsDiffMsg.value = "";
+            translationsDiff.value = null;
 
             // Simply reset diff on hide toggle
             if (hasPreviousDiff) return;
@@ -119,6 +151,8 @@ export default {
             diff.value = null;
             rightsDiffMsg.value = "";
             rightsDiff.value = null;
+            translationsDiffMsg.value = "";
+            translationsDiff.value = null;
 
             // Simply reset diff on hide toggle
             if (hasPreviousRightsDiff) return;
@@ -135,14 +169,43 @@ export default {
                 });
         }
 
+        async function getTranslationsDiff() {
+            const hasPreviousTranslationsDiff = !!translationsDiff.value;
+
+            diffMsg.value = "";
+            diff.value = null;
+            rightsDiffMsg.value = "";
+            rightsDiff.value = null;
+            translationsDiffMsg.value = "";
+            translationsDiff.value = null;
+
+            // Simply reset diff on hide toggle
+            if (hasPreviousTranslationsDiff) return;
+
+            api.post(`${config.apiBaseUrl}/trigger/push-translations`, {
+                dry_run: true,
+            })
+                .then((result) => {
+                    translationsDiff.value = result.data.translations;
+                })
+                .catch((e) => {
+                    console.log(e);
+                    translationsDiffMsg.value = getError(e);
+                });
+        }
+
         return {
             showRights: config.AUTOSYNC_INCLUDE_RIGHTS,
+            showTranslations: config.AUTOSYNC_INCLUDE_TRANSLATIONS,
             isSnapshotDisabled: !config.filepaths.latestSnapshot,
             isRightsDisabled: !config.filepaths.latestRights,
+            isTranslationsDisabled: !config.filepaths.latestTranslations,
             diff,
             rightsDiff,
+            translationsDiff,
             diffMsg,
             rightsDiffMsg,
+            translationsDiffMsg,
             getDiff,
             getRightsDiff,
             jsonToClipboard,

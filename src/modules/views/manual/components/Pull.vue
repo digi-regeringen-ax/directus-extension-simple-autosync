@@ -18,6 +18,10 @@
                 {{ currentPermissions.length }} permissions will be written to a
                 separate file.
             </p>
+            <p v-if="showTranslations">
+                Also, {{ currentTranslations.length }} translations will be written to a
+                separate file.
+            </p>
 
             <v-button class="sa-button" full-width @click="pullFiles()">
                 <v-icon name="save_as" />
@@ -49,6 +53,7 @@ export default {
         const currentPermissions = ref(null);
         const currentRoles = ref(null);
         const currentPolicies = ref(null);
+        const currentTranslations = ref(null);
         const pullMsg = ref("");
 
         const { useCollectionsStore } = useStores();
@@ -70,12 +75,19 @@ export default {
 
         async function getRightsData() {
             const currentRightsData = await api
-                .get(`${config.apiBaseUrl}/current-rights`)
+                .get(`${config.apiBaseUrl}/current/rights`)
                 .then((result) => result.data.rights);
 
             currentPermissions.value = currentRightsData.permissions;
             currentRoles.value = currentRightsData.roles;
             currentPolicies.value = currentRightsData.policies;
+        }
+        async function getTranslationsData() {
+            const currentTranslationsData = await api
+                .get(`${config.apiBaseUrl}/current/translations`)
+                .then((result) => result.data.translations);
+
+            currentTranslations.value = currentTranslationsData;
         }
 
         async function pullFiles() {
@@ -97,9 +109,11 @@ export default {
         return {
             collections,
             showRights: config.AUTOSYNC_INCLUDE_RIGHTS,
+            showTranslations: config.AUTOSYNC_INCLUDE_TRANSLATIONS,
             currentPermissions,
             currentRoles,
             currentPolicies,
+            currentTranslations,
             pullMsg,
             pullFiles,
         };

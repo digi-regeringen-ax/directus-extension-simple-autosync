@@ -2,6 +2,7 @@ import { defineHook } from "@directus/extensions-sdk";
 import * as helpers from "../lib/helpers";
 import * as snapshot from "../lib/snapshot";
 import * as rights from "../lib/rights";
+import * as translations from "../lib/translations";
 
 export default defineHook(
     async ({ init, action }, { services, getSchema, logger, emitter }) => {
@@ -44,6 +45,8 @@ export default defineHook(
 
         const shouldIncludeRights =
             helpers.getEnvConfig().AUTOSYNC_INCLUDE_RIGHTS;
+        const shouldIncludeTranslations =
+            helpers.getEnvConfig().AUTOSYNC_INCLUDE_TRANSLATIONS;
 
         logger.info(`${helpers.LP} AUTOSYNC_PULL is ${shouldAutoPull}`);
         if (shouldAutoPull) {
@@ -85,6 +88,15 @@ export default defineHook(
                         services,
                         schema,
                         emitter,
+                        accountability,
+                        false,
+                        versionData.version
+                    );
+                }
+                if (shouldIncludeTranslations) {
+                    await translations.pushTranslations(
+                        services,
+                        schema,
                         accountability,
                         false,
                         versionData.version

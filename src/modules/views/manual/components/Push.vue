@@ -2,7 +2,7 @@
     <div class="full">
         <h2 class="heading">Manual push</h2>
         <div class="form-grid">
-            <div :class="showRights ? 'half' : 'full'">
+            <div :class="(showRights || showTranslations) ? 'half' : 'full'">
                 <h3 class="small-heading">Data model</h3>
                 <p>
                     Apply latest data model snapshot file from disk to database.
@@ -25,6 +25,18 @@
                 </v-button>
                 <p v-if="pushRightsMsg">{{ pushRightsMsg }}</p>
             </div>
+            <div class="half" v-if="showTranslations">
+                <h3 class="small-heading">Translations</h3>
+                <p>
+                    Apply latest translations from file on
+                    disk to database.
+                </p>
+                <v-button class="sa-button" :disabled="isTranslationsDisabled" full-width @click="applyTranslations()">
+                    <v-icon name="upload" />
+                    <span>Apply translations file</span>
+                </v-button>
+                <p v-if="pushTranslationsMsg">{{ pushTranslationsMsg }}</p>
+            </div>
         </div>
     </div>
 </template>
@@ -43,6 +55,7 @@ export default {
         const { config } = props;
         const pushMsg = ref("");
         const pushRightsMsg = ref("");
+        const pushTranslationsMsg = ref("");
 
         async function applySnapshot() {
             const warning =
@@ -78,14 +91,34 @@ export default {
             }
         }
 
+        async function applyTranslations() {
+            const warning =
+                "Are you sure? Your translations in the database will be overwritten.";
+            if (confirm(warning)) {
+                pushTranslationsMsg.value = "";
+                api.post(`${config.apiBaseUrl}/trigger/push-translations`, { dry_run: false })
+                    .then((result) => {
+                        pushTranslationsMsg.value = "Successfully applied translations!";
+                    })
+                    .catch((e) => {
+                        pushTranslationsMsg.value = getError(e);
+                        console.log("e", e);
+                    });
+            }
+        }
+
         return {
             showRights: config.AUTOSYNC_INCLUDE_RIGHTS,
+            showTranslations: config.AUTOSYNC_INCLUDE_TRANSLATIONS,
             isSnapshotDisabled: !config.filepaths.latestSnapshot,
             isRightsDisabled: !config.filepaths.latestRights,
+            isTranslationsDisabled: !config.filepaths.latestTranslations,
             pushMsg,
             pushRightsMsg,
+            pushTranslationsMsg,
             applySnapshot,
             applyRights,
+            applyTranslations,
 
         };
     },
