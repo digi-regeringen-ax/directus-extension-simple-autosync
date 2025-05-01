@@ -1,3 +1,4 @@
+import pick from "lodash/pick";
 import {
     getEnvConfig,
     getSyncFilePath,
@@ -69,7 +70,8 @@ export async function pushTranslations(
         );
         const existingTranslationsRes = await Promise.all(
             existingTranslationsInput.map(async (t) => {
-                return await translationsService.updateOne(t.id, t);
+                // Directus effectively only allows us to update value, may be a bug?
+                return await translationsService.updateOne(t.id, pick(t, "value"));
             })
         );
     }
