@@ -12,13 +12,13 @@
                     {{ coll.collection }}
                 </li>
             </ul>
-            <p v-if="showRights">
+            <p v-if="showRights && currentPolicies">
                 Also, {{ currentPolicies.length }} policies,
                 {{ currentRoles.length }} roles and
                 {{ currentPermissions.length }} permissions will be written to a
                 separate file.
             </p>
-            <p v-if="showTranslations">
+            <p v-if="showTranslations && currentTranslations">
                 Also, {{ currentTranslations.length }} translations will be written to a
                 separate file.
             </p>
@@ -71,6 +71,7 @@ export default {
 
         onMounted(() => {
             getRightsData();
+            getTranslationsData();
         });
 
         async function getRightsData() {

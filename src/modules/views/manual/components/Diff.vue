@@ -208,6 +208,7 @@ export default {
             translationsDiffMsg,
             getDiff,
             getRightsDiff,
+            getTranslationsDiff,
             jsonToClipboard,
             toJson,
         };
