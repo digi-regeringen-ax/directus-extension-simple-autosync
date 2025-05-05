@@ -57,6 +57,7 @@ import { computed } from "vue";
 export default {
     props: {
         config: Object,
+        colClassName: String
     },
 
     setup(props) {
