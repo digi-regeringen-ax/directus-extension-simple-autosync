@@ -4,6 +4,21 @@ import isEqual from "lodash/isequal";
 import partition from "lodash/partition";
 import omit from "lodash/omit";
 
+import { pullTranslations } from "./services/translations";
+import { pullRights } from "./services/rights";
+import { pullSnapshot } from "./services/snapshot";
+
+export async function getVersion(req, context) {
+    const { ServerService } = context.services;
+
+    const service = new ServerService({
+        accountability: req.accountability,
+        schema: req.schema,
+    });
+    const data = await service.serverInfo();
+    return data.version;
+}
+
 export function getSyncFilePath(file, version = "unknown", timestamp = "") {
     const { AUTOSYNC_FILE_PATH: dir, AUTOSYNC_MULTIFILE } = getEnvConfig();
     let filename;
@@ -19,6 +34,53 @@ export function getSyncFilePath(file, version = "unknown", timestamp = "") {
     }
 
     return path.join(dir, filename);
+}
+
+/**
+ * 
+ * Perform a write of current data
+ * to each feature sync file
+ * at the same time, with the
+ * same timestamp
+ * 
+ * @param {*} services 
+ * @param {*} schema 
+ * @param {*} accountability 
+ * @param {*} version 
+ * @returns 
+ */
+export async function pullSyncFiles(services, schema, accountability, version) {
+    const envConfig = getEnvConfig();
+    const currentTimeStamp = getCurrentTimestamp();
+    const snapshot = await pullSnapshot(
+        services,
+        schema,
+        accountability,
+        version,
+        currentTimeStamp
+    );
+    const r = {
+        snapshot,
+    };
+    if (envConfig.AUTOSYNC_INCLUDE_RIGHTS) {
+        r.rights = await pullRights(
+            services,
+            schema,
+            accountability,
+            version,
+            currentTimeStamp
+        );
+    }
+    if (envConfig.AUTOSYNC_INCLUDE_TRANSLATIONS) {
+        r.translations = await pullTranslations(
+            services,
+            schema,
+            accountability,
+            version,
+            currentTimeStamp
+        );
+    }
+    return r;
 }
 
 /**
@@ -113,3 +175,4 @@ export const LP = "simple-autosync:";
 
 // Hook prefix
 export const HP = "simple-autosync";
+export const API_BASE = "simple-autosync";

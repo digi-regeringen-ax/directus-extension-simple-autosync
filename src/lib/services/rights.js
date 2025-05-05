@@ -9,7 +9,7 @@ import {
     readJson,
     writeJson,
     partitionCreateUpdate
-} from "./helpers.js";
+} from "../helpers.js";
 
 export async function pullRights(
     services,

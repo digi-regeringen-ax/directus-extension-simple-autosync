@@ -5,7 +5,7 @@ import {
     partitionCreateUpdate,
     readJson,
     writeJson,
-} from "./helpers.js";
+} from "../helpers.js";
 
 export async function pullTranslations(
     services,
