@@ -2,7 +2,7 @@
     <div class="full">
         <h2 class="heading">Manual push</h2>
         <div class="form-grid">
-            <div :class="(showRights || showTranslations) ? 'half' : 'full'">
+            <div :class="colClassName">
                 <h3 class="small-heading">Data model</h3>
                 <p>
                     Apply latest data model snapshot file from disk to database.
@@ -13,7 +13,7 @@
                 </v-button>
                 <p v-if="pushMsg">{{ pushMsg }}</p>
             </div>
-            <div class="half" v-if="showRights">
+            <div :class="colClassName" v-if="showRights">
                 <h3 class="small-heading">Rights</h3>
                 <p>
                     Apply latest policies, roles and permissions from file on
@@ -25,7 +25,7 @@
                 </v-button>
                 <p v-if="pushRightsMsg">{{ pushRightsMsg }}</p>
             </div>
-            <div class="half" v-if="showTranslations">
+            <div :class="colClassName" v-if="showTranslations">
                 <h3 class="small-heading">Translations</h3>
                 <p>
                     Apply latest translations from file on
@@ -48,6 +48,7 @@ import { getError } from "../../../utils.js";
 export default {
     props: {
         config: Object,
+        colClassName: String
     },
     setup(props) {
         const api = useApi();

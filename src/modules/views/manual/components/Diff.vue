@@ -2,7 +2,7 @@
     <div>
         <h2 class="heading">Diff</h2>
         <div class="form-grid">
-            <div :class="(showRights || showTranslations) ? 'half' : 'full'">
+            <div :class="colClassName">
                 <h3 class="small-heading">Data model</h3>
                 <p>
                     View differences between current data model and the latest
@@ -14,7 +14,7 @@
                 </v-button>
                 <p v-if="diffMsg">{{ diffMsg }}</p>
             </div>
-            <div class="half" v-if="showRights">
+            <div :class="colClassName" v-if="showRights">
                 <h3 class="small-heading">Rights</h3>
                 <p>
                     View what rights objects would be created, updated or
@@ -29,7 +29,7 @@
                 </v-button>
                 <p v-if="rightsDiffMsg">{{ rightsDiffMsg }}</p>
             </div>
-            <div class="half" v-if="showTranslations">
+            <div :class="colClassName" v-if="showTranslations">
                 <h3 class="small-heading">Translations</h3>
                 <p>
                     View what translations objects would be created or updated. 
@@ -93,13 +93,14 @@
 </template>
 
 <script>
-import { ref } from "vue";
+import { ref, computed } from "vue";
 import { useApi } from "@directus/extensions-sdk";
 
 import { getError, jsonToClipboard, toJson } from "../../../utils.js";
 export default {
     props: {
-        config: Object
+        config: Object,
+        colClassName: String
     },
     setup(props) {
         const { config } = props;

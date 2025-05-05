@@ -1,7 +1,7 @@
 <template>
     <h2 class="heading">Download</h2>
     <div class="form-grid">
-        <div :class="(showRights || showTranslations) ? 'half' : 'full'">
+        <div :class="colClassName">
             <h3 class="small-heading">Data model</h3>
             <p>
                 Download the latest currently stored snapshot file from server
@@ -17,7 +17,7 @@
                 <span>Download snapshot</span>
             </v-button>
         </div>
-        <div class="half" v-if="showRights">
+        <div :class="colClassName" v-if="showRights">
             <h3 class="small-heading">Rights</h3>
             <p>
                 Download the latest currently stored rights file from server
@@ -33,7 +33,7 @@
                 <span>Download rights</span>
             </v-button>
         </div>
-        <div class="half" v-if="showTranslations">
+        <div :class="colClassName" v-if="showTranslations">
             <h3 class="small-heading">Translations</h3>
             <p>
                 Download the latest currently stored translations file from server
