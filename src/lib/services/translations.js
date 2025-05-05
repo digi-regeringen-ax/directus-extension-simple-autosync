@@ -61,7 +61,7 @@ export async function pushTranslations(
      * Get separate lists of what to
      * create and what to update
      */
-    const [existingTranslationsInput, initialTranslationsInput] =
+    const [initialTranslationsInput, existingTranslationsInput] =
         partitionCreateUpdate(translationsFromFile, currentTranslations);
 
     if (!dryRun) {

@@ -235,20 +235,20 @@ export async function pushRights(
      * Get separate lists of what to
      * create and what to update
      */
-    const [existingRolesInput, initialRolesInput] = partitionCreateUpdate(
+    const [initialRolesInput, existingRolesInput] = partitionCreateUpdate(
         rolesFromFile,
         currentRoles
     );
 
-    const [existingPoliciesInput, initialPoliciesInput] = partitionCreateUpdate(
+    const [initialPoliciesInput, existingPoliciesInput] = partitionCreateUpdate(
         policiesFromFile,
         currentPolicies
     );
 
-    const [existingPermissionsInput, initialPermissionsInput] =
+    const [initialPermissionsInput, existingPermissionsInput] =
         partitionCreateUpdate(permissionsFromFile, currentPermissions);
 
-    const [existingAccessInput, initialAccessInput] = partitionCreateUpdate(
+    const [initialAccessInput, existingAccessInput] = partitionCreateUpdate(
         accessFromFile,
         currentAccess
     );

@@ -37,17 +37,17 @@ export function getSyncFilePath(file, version = "unknown", timestamp = "") {
 }
 
 /**
- * 
+ *
  * Perform a write of current data
  * to each feature sync file
  * at the same time, with the
  * same timestamp
- * 
- * @param {*} services 
- * @param {*} schema 
- * @param {*} accountability 
- * @param {*} version 
- * @returns 
+ *
+ * @param {*} services
+ * @param {*} schema
+ * @param {*} accountability
+ * @param {*} version
+ * @returns
  */
 export async function pullSyncFiles(services, schema, accountability, version) {
     const envConfig = getEnvConfig();
@@ -159,6 +159,7 @@ export function partitionCreateUpdate(fromFiles, fromCurrent) {
     // Filter out any identical objects that
     // doesn't need updating
     return [
+        toCreate,
         toUpdate.filter((obj) => {
             const current = fromCurrent.find((item) => obj.id === item.id);
 
@@ -166,7 +167,6 @@ export function partitionCreateUpdate(fromFiles, fromCurrent) {
             // temporary, computed property
             return !isEqual(omit(obj, "_originalId"), current);
         }),
-        toCreate,
     ];
 }
 
