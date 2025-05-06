@@ -5,6 +5,7 @@ import {
     partitionCreateUpdate,
     readJson,
     writeJson,
+    HP
 } from "../helpers.js";
 
 export async function pullTranslations(

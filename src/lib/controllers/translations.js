@@ -73,6 +73,7 @@ export default (context) => ({
             const pushTranslationsRes = await pushTranslations(
                 context.services,
                 req.schema,
+                context.emitter,
                 req.accountability,
                 dryRun,
                 version

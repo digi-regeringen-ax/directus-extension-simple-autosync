@@ -6,6 +6,7 @@ import { getSyncFilePath, readJson, writeJson, HP } from "../helpers.js";
 export async function pushSnapshot(
     services,
     schema,
+    emitter,
     accountability,
     dryRun = false,
     version
@@ -17,7 +18,7 @@ export async function pushSnapshot(
 
     const object = readJson(filename);
 
-    const currentSnapshot = await getCurrentSnapshot(schemaService);
+    const currentSnapshot = await getCurrentSnapshot(schemaService, emitter);
 
     const diff = await schemaService.diff(object, { currentSnapshot });
 
@@ -57,8 +58,6 @@ export async function pullSnapshot(
 
 export async function getCurrentSnapshot(schemaService, emitter) {
     const snapshot = await schemaService.snapshot();
-    if(!emitter) return snapshot;
-
     const filteredSnapshot = await emitter.emitFilter(`${HP}.snapshot.pull`, snapshot);
     return filteredSnapshot;
 }
