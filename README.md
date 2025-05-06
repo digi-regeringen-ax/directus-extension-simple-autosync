@@ -50,7 +50,10 @@ This is typically suitable for CI/CD deployed live environments.
 ### Including policies, roles and permissions
 Usually, a project has carefully configured levels of access that go along with your data model setup. This extension uses the term "rights" to collectively describe permissions, policies and roles along with their relations.
 
-**Note:** In order to prevent duplicates, avoid renaming and changing the description of the default roles and policies that come with the Directus initial setup.
+#### Things to note:
+- In order to prevent duplicates, avoid renaming and changing the description of the default roles and policies that come with the Directus initial setup.
+- Direct references to user IDs will be removed, since users are not synced.
+- Any relations that are exclusively between a user and policy will not be included at all.
 
 To enable separate sync files for rights, simple set the following env variable:
 ```
@@ -58,6 +61,25 @@ AUTOSYNC_INCLUDE_RIGHTS=true
 ```
 
 Now your rights data will be synced as well, stored in a separate file `rights.json`.
+
+### Custom filtering
+This extension features custom hooks, which gives you the option to customize exactly what's written to the sync files.
+Available filter hooks:
+- `simple-autosync.snapshot.pull`
+- `simple-autosync.policies.pull`
+- `simple-autosync.permissions.pull`
+- `simple-autosync.roles.pull`
+- `simple-autosync.access.pull`
+
+For [security reasons](https://github.com/directus/directus/discussions/10400#discussioncomment-1983100), Directus won't let you use the core event listener to listen for custom events like these. Example of how to configure a hook extension to listen:
+```
+export default (_, { emitter }) => {
+    // Exclude any policies with names starting with "User only"
+	emitter.onFilter("simple-autosync.policies.pull", (data) => {
+		return data.filter(policy => !policy.name.startsWith("User only"));
+	});
+};
+```
 
 ## What about my existing data model?
 **NOTE:** Using this extension will cause loss of data and unexpected problems if your environment that you are *applying the snapshot file to* already has collections (and roles, polices and permissions if using the rights feature) that are not represented in your snapshot file.

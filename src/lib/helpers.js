@@ -57,6 +57,7 @@ export function getEnvConfig() {
     const defaultAutosyncFilepath = `${process.cwd()}/autosync-config`;
     const autosyncFilepath =
         process.env.AUTOSYNC_FILE_PATH || defaultAutosyncFilepath;
+
     return {
         AUTOSYNC_PULL: isStringTruthy(process.env.AUTOSYNC_PULL),
         AUTOSYNC_PUSH: isStringTruthy(process.env.AUTOSYNC_PUSH),
@@ -80,3 +81,6 @@ export function readJson(filePath) {
 
 // log prefix
 export const LP = "simple-autosync:";
+
+// Hook prefix
+export const HP = "simple-autosync";

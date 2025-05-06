@@ -6,6 +6,7 @@ import pick from "lodash/pick";
 import {
     getEnvConfig,
     getSyncFilePath,
+    HP,
     readJson,
     writeJson,
 } from "./helpers.js";
@@ -13,6 +14,7 @@ import {
 export async function pullRights(
     services,
     schema,
+    emitter,
     accountability,
     version,
     currentTimeStamp
@@ -31,7 +33,8 @@ export async function pullRights(
         policiesService,
         permissionsService,
         rolesService,
-        accessService
+        accessService,
+        emitter
     );
 
     const rightsFilePath = getSyncFilePath("rights", version, currentTimeStamp);
@@ -43,6 +46,7 @@ export async function pullRights(
 export async function pushRights(
     services,
     schema,
+    emitter,
     accountability,
     dryRun = false,
     version
@@ -78,7 +82,8 @@ export async function pushRights(
         policiesService,
         permissionsService,
         rolesService,
-        accessService
+        accessService,
+        emitter
     );
 
     // Figure out what roles/policies are default
@@ -361,34 +366,59 @@ export async function getCurrentRightsSetup(
     policiesService,
     permissionsService,
     rolesService,
-    accessService
+    accessService,
+    emitter
 ) {
     const policies = await policiesService.readByQuery({
         limit: -1,
     });
+    let filteredPolicies = policies.map((policy) =>
+        omit(policy, ["roles", "permissions", "users"])
+    );
+    filteredPolicies = await emitter.emitFilter(`${HP}.policies.pull`, filteredPolicies);
+
     const permissions = await permissionsService.readByQuery({
         limit: -1,
     });
+    let filteredPermissions = permissions.filter(perm => {
+        const policy = filteredPolicies.find(policy => policy.id === perm.policy);
+        return !!policy && !perm.system;
+    })
+    filteredPermissions = await emitter.emitFilter(`${HP}.permissions.pull`, filteredPermissions);
+
     const roles = await rolesService.readByQuery({
         limit: -1,
     });
+    let filteredRoles = roles.map((role) =>
+        omit(role, ["policies", "users"])
+    );
+    filteredRoles = await emitter.emitFilter(`${HP}.roles.pull`, filteredRoles);
+
+
     const access = await accessService.readByQuery({
         limit: -1,
     });
+    let filteredAccess = access.filter(a => {
+        // If this is an access object that's only
+        // a relation between a policy and a local
+        // user, don't include it at all
+        const isPolicyUserRelation = a.user && a.policy && !a.role;
+        return !isPolicyUserRelation;
+    }).map(a => {
+        // Access has optional 'user' reference
+        return { ...a, user: null }
+    });
+    filteredAccess = await emitter.emitFilter(`${HP}.access.pull`, filteredAccess);
 
     // Clear away any relation info which we'll
     // re-create with access table below.
     // All references to users will be scrapped
     // since users don't carry over between envs.
     return {
-        policies: cleanUserRelations(policies).map((policy) =>
-            omit(policy, ["roles", "permissions"])
-        ),
-        permissions: permissions.filter((perm) => !perm.system),
-        roles: cleanUserRelations(roles).map((role) =>
-            omit(role, ["policies"])
-        ),
-        access: cleanUserRelations(access),
+        policies: filteredPolicies,
+        permissions: filteredPermissions,
+        roles: filteredRoles,
+        access: filteredAccess,
     };
 }
 
@@ -480,17 +510,6 @@ function rewriteDefaultsToPlaceholderIds(currentRightsData) {
     };
 }
 
-function cleanUserRelations(arr) {
-    return arr.map((o) => {
-        // Never include list of user IDs
-        const cleaned = omit(o, ["users"]);
-
-        // Access has optional 'user' reference
-        if (o.user) cleaned.user = null;
-
-        return cleaned;
-    });
-}
 
 function partitionCreateUpdate(fromFiles, fromCurrent) {
     // If an ID already exists in database,
