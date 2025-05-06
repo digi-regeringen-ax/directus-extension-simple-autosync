@@ -43,7 +43,8 @@ export default (context) => ({
                 policiesService,
                 permissionsService,
                 rolesService,
-                accessService
+                accessService,
+                context.emitter
             );
             r.rights = rights;
             success = true;

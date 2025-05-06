@@ -17,7 +17,7 @@ export default (context) => ({
         let r = { error: null, snapshot: null };
 
         try {
-            const currentSnapshot = await getCurrentSnapshot(schemaService);
+            const currentSnapshot = await getCurrentSnapshot(schemaService, context.emitter);
             r.snapshot = currentSnapshot;
             success = true;
             status = 200;

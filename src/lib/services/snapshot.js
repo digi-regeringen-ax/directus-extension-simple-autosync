@@ -41,8 +41,7 @@ export async function pullSnapshot(
     const { SchemaService } = services;
     const schemaService = new SchemaService({ accountability, schema });
 
-    const snapshot = await getCurrentSnapshot(schemaService);
-    const filteredSnapshot = await emitter.emitFilter(`${HP}.snapshot.pull`, snapshot);
+    const snapshot = await getCurrentSnapshot(schemaService, emitter);
 
     const filePath = getSyncFilePath("snapshot", version, currentTimestamp);
 
@@ -51,11 +50,15 @@ export async function pullSnapshot(
         fs.mkdirSync(dir, { recursive: true });
     }
 
-    writeJson(filePath, filteredSnapshot);
+    writeJson(filePath, snapshot);
 
-    return filteredSnapshot;
+    return snapshot;
 }
 
-export async function getCurrentSnapshot(schemaService) {
-    return await schemaService.snapshot();
+export async function getCurrentSnapshot(schemaService, emitter) {
+    const snapshot = await schemaService.snapshot();
+    if(!emitter) return snapshot;
+
+    const filteredSnapshot = await emitter.emitFilter(`${HP}.snapshot.pull`, snapshot);
+    return filteredSnapshot;
 }
