@@ -14,7 +14,7 @@ import translationsControllers from "../lib/controllers/translations.js";
 
 // Must be admin to access these endpoints
 const checkPermission = () => async (req, res, next) => {
-    if (req.accountability?.user == null) {
+    if (!req.accountability?.user) {
         return res.status(401).send(`Unauthenticated`);
     }
 
@@ -28,6 +28,10 @@ const checkPermission = () => async (req, res, next) => {
 export default defineEndpoint({
     id: API_BASE,
     handler: async (router, context) => {
+        // Use permissions check middleware
+        // for all registered routes below
+        router.use(checkPermission(context));
+
         const {
             configGetController,
             downloadFileGetController,
