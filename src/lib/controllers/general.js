@@ -1,10 +1,11 @@
-
 import {
     getVersion,
     getEnvConfig,
     getSyncFilePath,
     API_BASE,
-    LP
+    LP,
+    jsonSuccessResponse,
+    jsonErrorResponse,
 } from "../helpers";
 import { pullSyncFiles, getFilePaths } from "../services/general";
 
@@ -20,15 +21,20 @@ export default (context) => ({
      * @returns
      */
     configGetController: async (req, res) => {
-        const version = await getVersion(req, context);
-        const envConfig = getEnvConfig();
-        const filepaths = getFilePaths();
-        return res.json({
-            ...envConfig,
-            filepaths,
-            version,
-            apiBaseUrl: `/${API_BASE}`,
-        });
+        try {
+            const version = await getVersion(req, context);
+            const envConfig = getEnvConfig();
+            const filepaths = getFilePaths(version);
+            return jsonSuccessResponse(res, {
+                ...envConfig,
+                filepaths,
+                version,
+                apiBaseUrl: `/${API_BASE}`,
+            });
+        } catch (e) {
+            context.logger.error(e, `${LP} config`);
+            return jsonErrorResponse(res, e);
+        }
     },
 
     /**
@@ -53,14 +59,6 @@ export default (context) => ({
     },
 
     triggerPullPostController: async (req, res) => {
-        let success = false;
-        let status = 500;
-        let snapshot = null;
-        let rights = null;
-        let translations = null;
-
-        const r = { error: null };
-
         try {
             const pullRes = await pullSyncFiles(
                 context.services,
@@ -69,27 +67,16 @@ export default (context) => ({
                 req.accountability,
                 await getVersion(req, context)
             );
-            return res.json({ snapshot: pullRes.snapshot, success: true})
-            snapshot = pullRes.snapshot;
+            return jsonSuccessResponse(res, {
+                snapshot: pullRes.snapshot,
 
-            // Optional features, possible undefined
-            rights = pullRes.rights;
-            translations = pullRes.translations;
-
-            success = true;
-            status = 200;
+                // Optional depending on activated features
+                rights: pullRes.rights ?? undefined,
+                translations: pullRes.translations ?? undefined,
+            });
         } catch (e) {
             context.logger.error(e, `${LP} trigger/pull`);
-            if (e.status) status = e.status;
-            r.error = e;
+            return jsonErrorResponse(res, e);
         }
-
-        r.snapshot = snapshot;
-        if(rights) r.rights = rights;
-        if(translations) r.translations = translations;
-
-        r.success = success;
-
-        return res.status(status).json(r);
     },
 });

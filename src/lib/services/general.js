@@ -6,7 +6,7 @@ import { pullTranslations } from "./translations";
 import { pullRights } from "./rights";
 import { pullSnapshot } from "./snapshot";
 
-export async function getFilePaths() {
+export function getFilePaths(version) {
     const envConfig = getEnvConfig();
 
     const timestampPlaceholder = "{TIMESTAMP}";

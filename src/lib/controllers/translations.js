@@ -1,4 +1,10 @@
-import { isStringTruthy, getVersion, LP } from "../helpers";
+import {
+    isStringTruthy,
+    getVersion,
+    LP,
+    jsonSuccessResponse,
+    jsonErrorResponse,
+} from "../helpers";
 import {
     getCurrentTranslations,
     pushTranslations,
@@ -18,27 +24,17 @@ export default (context) => ({
             accountability: req.accountability,
             schema: req.schema,
         });
-        let status = 500;
-        let success = false;
-        let r = { error: null, translations: null };
 
         try {
-            const currentTranslations = await getCurrentTranslations(
+            const translations = await getCurrentTranslations(
                 translationsService,
                 context.emitter
             );
-            r.translations = currentTranslations;
-            success = true;
-            status = 200;
+            return jsonSuccessResponse(res, { translations });
         } catch (e) {
             context.logger.error(e, `${LP} current/translations`);
-            if (e.status) status = e.status;
-            r.error = e;
+            return jsonErrorResponse(res, e);
         }
-
-        r.success = success;
-
-        return res.status(status).json(r);
     },
 
     /**
@@ -53,9 +49,6 @@ export default (context) => ({
      * @returns { translations: Object, success: Boolean, error?: Error }
      */
     triggerPushTranslationsPostController: async (req, res) => {
-        let success = false;
-        let status = 500;
-
         /**
          *
          * If true, endpoint will only return the
@@ -68,7 +61,6 @@ export default (context) => ({
 
         const version = await getVersion(req, context);
 
-        let r = { error: null };
         try {
             const pushTranslationsRes = await pushTranslations(
                 context.services,
@@ -78,17 +70,12 @@ export default (context) => ({
                 dryRun,
                 version
             );
-            r = { ...r, translations: pushTranslationsRes };
-            success = true;
-            status = 200;
+            return jsonSuccessResponse(res, {
+                translations: pushTranslationsRes,
+            });
         } catch (e) {
             context.logger.error(e, `${LP} trigger/push-translations`);
-            if (e.status) status = e.status;
-            r.error = e;
+            return jsonErrorResponse(res, e);
         }
-
-        r.success = success;
-
-        return res.status(status).json(r);
     },
 });

@@ -119,9 +119,20 @@ export function partitionCreateUpdate(fromFiles, fromCurrent) {
     ];
 }
 
+export function jsonSuccessResponse(res, data, status = 200) {
+    return res.status(status).json({ success: true, error: null, ...data });
+}
+
+export function jsonErrorResponse(res, error) {
+    const status = error.status ? error.status : 500;
+    return res.status(status).json({ success: false, error });
+}
+
 // log prefix
 export const LP = "simple-autosync:";
 
 // Hook prefix
 export const HP = "simple-autosync";
+
+// Api base namespace/path
 export const API_BASE = "simple-autosync";

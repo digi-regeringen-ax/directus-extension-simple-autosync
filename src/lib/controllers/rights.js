@@ -1,4 +1,4 @@
-import { isStringTruthy, getVersion, LP } from "../helpers";
+import { isStringTruthy, getVersion, LP, jsonSuccessResponse, jsonErrorResponse } from "../helpers";
 import { pushRights, getCurrentRightsSetup } from "../services/rights";
 
 export default (context) => ({
@@ -34,10 +34,6 @@ export default (context) => ({
             schema: req.schema,
         });
 
-        let status = 500;
-        let success = false;
-        let r = { error: null, rights: null };
-
         try {
             const rights = await getCurrentRightsSetup(
                 policiesService,
@@ -46,18 +42,11 @@ export default (context) => ({
                 accessService,
                 context.emitter
             );
-            r.rights = rights;
-            success = true;
-            status = 200;
+            return jsonSuccessResponse(res, { rights });
         } catch (e) {
             context.logger.error(e, `${LP} current/rights`);
-            if (e.status) status = e.status;
-            r.error = e;
+            return jsonErrorResponse(res, e);
         }
-
-        r.success = success;
-
-        return res.status(status).json(r);
     },
     /**
      *
@@ -71,8 +60,6 @@ export default (context) => ({
      * @returns { rights: Object, success: Boolean, error?: Error }
      */
     triggerPushRightsPostController: async (req, res) => {
-        let success = false;
-        let status = 500;
 
         /**
          *
@@ -86,7 +73,6 @@ export default (context) => ({
 
         const version = await getVersion(req, context);
 
-        let r = { error: null };
         try {
             const pushRightsRes = await pushRights(
                 context.services,
@@ -96,17 +82,10 @@ export default (context) => ({
                 dryRun,
                 version
             );
-            r = { ...r, rights: pushRightsRes };
-            success = true;
-            status = 200;
+            return jsonSuccessResponse(res, {rights: pushRightsRes})
         } catch (e) {
             context.logger.error(e, `${LP} trigger/push-rights`);
-            if (e.status) status = e.status;
-            r.error = e;
+            return jsonErrorResponse(res, e);
         }
-
-        r.success = success;
-
-        return res.status(status).json(r);
     },
 });

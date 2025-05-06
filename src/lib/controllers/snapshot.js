@@ -1,4 +1,10 @@
-import { isStringTruthy, getVersion, LP } from "../helpers";
+import {
+    isStringTruthy,
+    getVersion,
+    LP,
+    jsonSuccessResponse,
+    jsonErrorResponse,
+} from "../helpers";
 import { pushSnapshot, getCurrentSnapshot } from "../services/snapshot";
 
 export default (context) => ({
@@ -12,24 +18,17 @@ export default (context) => ({
     currentSnapshotGetController: async (req, res) => {
         const { SchemaService } = services;
         const schemaService = new SchemaService({ accountability, schema });
-        let status = 500;
-        let success = false;
-        let r = { error: null, snapshot: null };
 
         try {
-            const currentSnapshot = await getCurrentSnapshot(schemaService, context.emitter);
-            r.snapshot = currentSnapshot;
-            success = true;
-            status = 200;
+            const snapshot = await getCurrentSnapshot(
+                schemaService,
+                context.emitter
+            );
+            return jsonSuccessResponse(res, { snapshot });
         } catch (e) {
             context.logger.error(e, `${LP} current/snapshot`);
-            if (e.status) status = e.status;
-            r.error = e;
+            return jsonErrorResponse(res, e);
         }
-
-        r.success = success;
-
-        return res.status(status).json(r);
     },
     /**
      *
@@ -52,15 +51,10 @@ export default (context) => ({
         const dryRunParam = (req.body?.dry_run || "") + ""; // to string
         const dryRun = isStringTruthy(dryRunParam);
 
-        let success = false;
-        let status = 500;
-        let diff = null;
-
         const version = await getVersion(req, context);
 
-        const r = { error: null };
         try {
-            diff = await pushSnapshot(
+            const diff = await pushSnapshot(
                 context.services,
                 req.schema,
                 context.emitter,
@@ -68,17 +62,10 @@ export default (context) => ({
                 dryRun,
                 version
             );
-            success = true;
-            status = 200;
+            return jsonSuccessResponse(res, { diff });
         } catch (e) {
             context.logger.error(e, `${LP} trigger/push-snapshot`);
-            if (e.status) status = e.status;
-            r.error = e;
+            return jsonErrorResponse(res, e);
         }
-
-        r.success = success;
-        r.diff = diff;
-
-        return res.status(status).json(r);
     },
 });
