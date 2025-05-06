@@ -3,6 +3,7 @@ import * as helpers from "../lib/helpers";
 import * as snapshot from "../lib/services/snapshot";
 import * as rights from "../lib/services/rights";
 import * as translations from "../lib/services/translations";
+import * as general from "../lib/services/general";
 
 export default defineHook(
     async ({ init, action }, { services, getSchema, logger, emitter }) => {
@@ -111,7 +112,7 @@ export default defineHook(
 
         async function doPull() {
             try {
-                await helpers.pullSyncFiles(
+                await general.pullSyncFiles(
                     services,
                     schema,
                     emitter,
