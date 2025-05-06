@@ -24,7 +24,8 @@ export default (context) => ({
 
         try {
             const currentTranslations = await getCurrentTranslations(
-                translationsService
+                translationsService,
+                context.emitter
             );
             r.translations = currentTranslations;
             success = true;

@@ -21,7 +21,7 @@ export async function pullTranslations(
         schema,
     });
 
-    const translationsData = await getCurrentTranslations(translationsService);
+    const translationsData = await getCurrentTranslations(translationsService, emitter);
 
     const translationsFilePath = getSyncFilePath(
         "translations",
@@ -38,6 +38,7 @@ export async function pullTranslations(
 export async function pushTranslations(
     services,
     schema,
+    emitter,
     accountability,
     dryRun = false,
     version
@@ -54,7 +55,7 @@ export async function pushTranslations(
     const translationsFilePath = getSyncFilePath("translations", version);
     const translationsFromFile = readJson(translationsFilePath);
 
-    const currentTranslations = await getCurrentTranslations(translationsService);
+    const currentTranslations = await getCurrentTranslations(translationsService, emitter);
 
     /**
      *
@@ -82,8 +83,10 @@ export async function pushTranslations(
     };
 }
 
-export async function getCurrentTranslations(translationsService) {
-    return await translationsService.readByQuery({
+export async function getCurrentTranslations(translationsService, emitter) {
+    const translations = await translationsService.readByQuery({
         limit: -1,
     });
+    const filteredTranslations = await emitter.emitFilter(`${HP}.translations.pull`, translations);
+    return filteredTranslations;
 }

@@ -78,6 +78,7 @@ Available filter hooks:
 - `simple-autosync.permissions.pull`
 - `simple-autosync.roles.pull`
 - `simple-autosync.access.pull`
+- `simple-autosync.translations.pull`
 
 For [security reasons](https://github.com/directus/directus/discussions/10400#discussioncomment-1983100), Directus won't let you use the core event listener to listen for custom events like these. Example of how to configure a hook extension to listen:
 ```
