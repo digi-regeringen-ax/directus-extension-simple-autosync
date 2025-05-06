@@ -48,10 +48,6 @@ export default defineEndpoint({
             triggerPushTranslationsPostController,
         } = translationsControllers(context);
 
-        // Use permissions check middleware
-        // for all registered routes below
-        router.use(checkPermission(context));
-
         // General endpoints
         router.get("/config", configGetController);
         router.get("/download/:file", downloadFileGetController);
