@@ -1,5 +1,4 @@
-import isEqual from "lodash/isequal";
-import partition from "lodash/partition";
+
 import omit from "lodash/omit";
 import pick from "lodash/pick";
 
@@ -9,7 +8,8 @@ import {
     HP,
     readJson,
     writeJson,
-} from "./helpers.js";
+    partitionCreateUpdate
+} from "../helpers.js";
 
 export async function pullRights(
     services,
@@ -235,20 +235,20 @@ export async function pushRights(
      * Get separate lists of what to
      * create and what to update
      */
-    const [existingRolesInput, initialRolesInput] = partitionCreateUpdate(
+    const [initialRolesInput, existingRolesInput] = partitionCreateUpdate(
         rolesFromFile,
         currentRoles
     );
 
-    const [existingPoliciesInput, initialPoliciesInput] = partitionCreateUpdate(
+    const [initialPoliciesInput, existingPoliciesInput] = partitionCreateUpdate(
         policiesFromFile,
         currentPolicies
     );
 
-    const [existingPermissionsInput, initialPermissionsInput] =
+    const [initialPermissionsInput, existingPermissionsInput] =
         partitionCreateUpdate(permissionsFromFile, currentPermissions);
 
-    const [existingAccessInput, initialAccessInput] = partitionCreateUpdate(
+    const [initialAccessInput, existingAccessInput] = partitionCreateUpdate(
         accessFromFile,
         currentAccess
     );
@@ -511,25 +511,4 @@ function rewriteDefaultsToPlaceholderIds(currentRightsData) {
 }
 
 
-function partitionCreateUpdate(fromFiles, fromCurrent) {
-    // If an ID already exists in database,
-    // set to update it. Otherwise it will
-    // be created.
-    const [toUpdate, toCreate] = partition(
-        fromFiles,
-        (obj) => !!fromCurrent.find((item) => obj.id === item.id)
-    );
 
-    // Filter out any identical objects that
-    // doesn't need updating
-    return [
-        toUpdate.filter((obj) => {
-            const current = fromCurrent.find((item) => obj.id === item.id);
-
-            // Compare with _originalId since it's a
-            // temporary, computed property
-            return !isEqual(omit(obj, "_originalId"), current);
-        }),
-        toCreate,
-    ];
-}

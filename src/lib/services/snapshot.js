@@ -1,45 +1,12 @@
 import path from "node:path";
 import fs from "node:fs";
 
-import { pullRights } from "./rights.js";
-import {
-    getEnvConfig,
-    getSyncFilePath,
-    getCurrentTimestamp,
-    readJson,
-    writeJson,
-    HP,
-} from "./helpers.js";
-
-export async function pullSyncFiles(services, schema, emitter, accountability, version) {
-    const currentTimeStamp = getCurrentTimestamp();
-    const snapshot = await pullSnapshot(
-        services,
-        schema,
-        emitter,
-        accountability,
-        version,
-        currentTimeStamp
-    );
-    const r = {
-        snapshot,
-    };
-    if (getEnvConfig().AUTOSYNC_INCLUDE_RIGHTS) {
-        r.rights = await pullRights(
-            services,
-            schema,
-            emitter,
-            accountability,
-            version,
-            currentTimeStamp
-        );
-    }
-    return r;
-}
+import { getSyncFilePath, readJson, writeJson, HP } from "../helpers.js";
 
 export async function pushSnapshot(
     services,
     schema,
+    emitter,
     accountability,
     dryRun = false,
     version
@@ -51,7 +18,7 @@ export async function pushSnapshot(
 
     const object = readJson(filename);
 
-    const currentSnapshot = await schemaService.snapshot();
+    const currentSnapshot = await getCurrentSnapshot(schemaService, emitter);
 
     const diff = await schemaService.diff(object, { currentSnapshot });
 
@@ -64,7 +31,7 @@ export async function pushSnapshot(
     return diff;
 }
 
-async function pullSnapshot(
+export async function pullSnapshot(
     services,
     schema,
     emitter,
@@ -75,8 +42,7 @@ async function pullSnapshot(
     const { SchemaService } = services;
     const schemaService = new SchemaService({ accountability, schema });
 
-    const snapshot = await schemaService.snapshot();
-    const filteredSnapshot = await emitter.emitFilter(`${HP}.snapshot.pull`, snapshot);
+    const snapshot = await getCurrentSnapshot(schemaService, emitter);
 
     const filePath = getSyncFilePath("snapshot", version, currentTimestamp);
 
@@ -85,7 +51,13 @@ async function pullSnapshot(
         fs.mkdirSync(dir, { recursive: true });
     }
 
-    writeJson(filePath, filteredSnapshot);
+    writeJson(filePath, snapshot);
 
+    return snapshot;
+}
+
+export async function getCurrentSnapshot(schemaService, emitter) {
+    const snapshot = await schemaService.snapshot();
+    const filteredSnapshot = await emitter.emitFilter(`${HP}.snapshot.pull`, snapshot);
     return filteredSnapshot;
 }

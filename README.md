@@ -55,12 +55,20 @@ Usually, a project has carefully configured levels of access that go along with 
 - Direct references to user IDs will be removed, since users are not synced.
 - Any relations that are exclusively between a user and policy will not be included at all.
 
-To enable separate sync files for rights, simple set the following env variable:
+To enable separate sync file(s) for rights, simple set the following env variable:
 ```
 AUTOSYNC_INCLUDE_RIGHTS=true
 ```
 
 Now your rights data will be synced as well, stored in a separate file `rights.json`.
+
+### Including translations
+You may also choose to sync your custom translations.  To enable separate sync file(s) for translations, simple set the following env variable:
+```
+AUTOSYNC_INCLUDE_TRANSLATIONS=true
+```
+
+Note that while the sync handles updates based on the translation's ID, it will only apply changes made in translation value, not key. So effectively, once a translation is created, its ID is tied to its original key.
 
 ### Custom filtering
 This extension features custom hooks, which gives you the option to customize exactly what's written to the sync files.
@@ -70,6 +78,7 @@ Available filter hooks:
 - `simple-autosync.permissions.pull`
 - `simple-autosync.roles.pull`
 - `simple-autosync.access.pull`
+- `simple-autosync.translations.pull`
 
 For [security reasons](https://github.com/directus/directus/discussions/10400#discussioncomment-1983100), Directus won't let you use the core event listener to listen for custom events like these. Example of how to configure a hook extension to listen:
 ```
@@ -80,6 +89,8 @@ export default (_, { emitter }) => {
 	});
 };
 ```
+
+
 
 ## What about my existing data model?
 **NOTE:** Using this extension will cause loss of data and unexpected problems if your environment that you are *applying the snapshot file to* already has collections (and roles, polices and permissions if using the rights feature) that are not represented in your snapshot file.

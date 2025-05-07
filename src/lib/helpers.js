@@ -1,5 +1,19 @@
 import fs from "node:fs";
 import path from "node:path";
+import isEqual from "lodash/isequal";
+import partition from "lodash/partition";
+import omit from "lodash/omit";
+
+export async function getVersion(req, context) {
+    const { ServerService } = context.services;
+
+    const service = new ServerService({
+        accountability: req.accountability,
+        schema: req.schema,
+    });
+    const data = await service.serverInfo();
+    return data.version;
+}
 
 export function getSyncFilePath(file, version = "unknown", timestamp = "") {
     const { AUTOSYNC_FILE_PATH: dir, AUTOSYNC_MULTIFILE } = getEnvConfig();
@@ -66,6 +80,9 @@ export function getEnvConfig() {
         AUTOSYNC_INCLUDE_RIGHTS: isStringTruthy(
             process.env.AUTOSYNC_INCLUDE_RIGHTS
         ),
+        AUTOSYNC_INCLUDE_TRANSLATIONS: isStringTruthy(
+            process.env.AUTOSYNC_INCLUDE_TRANSLATIONS
+        ),
     };
 }
 
@@ -79,8 +96,43 @@ export function readJson(filePath) {
     return JSON.parse(snapshot);
 }
 
+export function partitionCreateUpdate(fromFiles, fromCurrent) {
+    // If an ID already exists in database,
+    // set to update it. Otherwise it will
+    // be created.
+    const [toUpdate, toCreate] = partition(
+        fromFiles,
+        (obj) => !!fromCurrent.find((item) => obj.id === item.id)
+    );
+
+    // Filter out any identical objects that
+    // doesn't need updating
+    return [
+        toCreate,
+        toUpdate.filter((obj) => {
+            const current = fromCurrent.find((item) => obj.id === item.id);
+
+            // Compare with _originalId since that's a
+            // temporary, computed property
+            return !isEqual(omit(obj, "_originalId"), current);
+        }),
+    ];
+}
+
+export function jsonSuccessResponse(res, data, status = 200) {
+    return res.status(status).json({ success: true, error: null, ...data });
+}
+
+export function jsonErrorResponse(res, error) {
+    const status = error.status ? error.status : 500;
+    return res.status(status).json({ success: false, error });
+}
+
 // log prefix
 export const LP = "simple-autosync:";
 
 // Hook prefix
 export const HP = "simple-autosync";
+
+// Api base namespace/path
+export const API_BASE = "simple-autosync";
