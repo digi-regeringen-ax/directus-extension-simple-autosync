@@ -68,6 +68,8 @@ You may also choose to sync your custom translations.  To enable separate sync f
 AUTOSYNC_INCLUDE_TRANSLATIONS=true
 ```
 
+Now your translations data will be synced as well, stored in a separate file `translations.json`.
+
 Note that while the sync handles updates based on the translation's ID, it will only apply changes made in translation value, not key. So effectively, once a translation is created, its ID is tied to its original key.
 
 ### Custom filtering
