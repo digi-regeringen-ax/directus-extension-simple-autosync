@@ -88,7 +88,6 @@
                         </li>
                     </ul>
                 </div>
-                {{ colClassName }}
                 <div class="full">
                     <Download :config="config" :col-class-name="colClassName" />
                 </div>
