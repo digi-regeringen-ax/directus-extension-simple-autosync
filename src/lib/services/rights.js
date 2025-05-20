@@ -1,4 +1,3 @@
-
 import omit from "lodash/omit";
 import pick from "lodash/pick";
 
@@ -8,7 +7,7 @@ import {
     HP,
     readJson,
     writeJson,
-    partitionCreateUpdate
+    partitionCreateUpdate,
 } from "../helpers.js";
 
 export async function pullRights(
@@ -375,40 +374,50 @@ export async function getCurrentRightsSetup(
     let filteredPolicies = policies.map((policy) =>
         omit(policy, ["roles", "permissions", "users"])
     );
-    filteredPolicies = await emitter.emitFilter(`${HP}.policies.pull`, filteredPolicies);
+    filteredPolicies = await emitter.emitFilter(
+        `${HP}.policies.pull`,
+        filteredPolicies
+    );
 
     const permissions = await permissionsService.readByQuery({
         limit: -1,
     });
-    let filteredPermissions = permissions.filter(perm => {
-        const policy = filteredPolicies.find(policy => policy.id === perm.policy);
+    let filteredPermissions = permissions.filter((perm) => {
+        const policy = filteredPolicies.find(
+            (policy) => policy.id === perm.policy
+        );
         return !!policy && !perm.system;
-    })
-    filteredPermissions = await emitter.emitFilter(`${HP}.permissions.pull`, filteredPermissions);
+    });
+    filteredPermissions = await emitter.emitFilter(
+        `${HP}.permissions.pull`,
+        filteredPermissions
+    );
 
     const roles = await rolesService.readByQuery({
         limit: -1,
     });
-    let filteredRoles = roles.map((role) =>
-        omit(role, ["policies", "users"])
-    );
+    let filteredRoles = roles.map((role) => omit(role, ["policies", "users"]));
     filteredRoles = await emitter.emitFilter(`${HP}.roles.pull`, filteredRoles);
-
 
     const access = await accessService.readByQuery({
         limit: -1,
     });
-    let filteredAccess = access.filter(a => {
-        // If this is an access object that's only
-        // a relation between a policy and a local
-        // user, don't include it at all
-        const isPolicyUserRelation = a.user && a.policy && !a.role;
-        return !isPolicyUserRelation;
-    }).map(a => {
-        // Access has optional 'user' reference
-        return { ...a, user: null }
-    });
-    filteredAccess = await emitter.emitFilter(`${HP}.access.pull`, filteredAccess);
+    let filteredAccess = access
+        .filter((a) => {
+            // If this is an access object that's only
+            // a relation between a policy and a local
+            // user, don't include it at all
+            const isPolicyUserRelation = a.user && a.policy && !a.role;
+            return !isPolicyUserRelation;
+        })
+        .map((a) => {
+            // Access has optional 'user' reference
+            return { ...a, user: null };
+        });
+    filteredAccess = await emitter.emitFilter(
+        `${HP}.access.pull`,
+        filteredAccess
+    );
 
     // Clear away any relation info which we'll
     // re-create with access table below.
@@ -437,7 +446,9 @@ const DEFAULT_ID_PLACEHOLDERS = {
 // to the default policies etc.
 const isDefaultAdminPolicy = (policy) =>
     policy.id === DEFAULT_ID_PLACEHOLDERS.adminPolicy ||
-    (policy.description === "$t:admin_description" && policy.admin_access);
+    ((policy.description === "$t:admin_policy_description" ||
+        policy.description === "$t:admin_description") &&
+        policy.admin_access);
 const isDefaultPublicPolicy = (policy) =>
     policy.id === DEFAULT_ID_PLACEHOLDERS.publicPolicy ||
     (policy.description === "$t:public_description" && !policy.admin_access);
@@ -509,6 +520,3 @@ function rewriteDefaultsToPlaceholderIds(currentRightsData) {
         }),
     };
 }
-
-
-
