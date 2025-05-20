@@ -396,7 +396,7 @@ export async function getCurrentRightsSetup(
     const roles = await rolesService.readByQuery({
         limit: -1,
     });
-    let filteredRoles = roles.map((role) => omit(role, ["policies", "users"]));
+    let filteredRoles = roles.map((role) => omit(role, ["policies", "users", "children"]));
     filteredRoles = await emitter.emitFilter(`${HP}.roles.pull`, filteredRoles);
 
     const access = await accessService.readByQuery({
