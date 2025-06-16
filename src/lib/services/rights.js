@@ -47,7 +47,7 @@ export async function pushRights(
     schema,
     emitter,
     accountability,
-    dryRun = false,
+    dryRun,
     version
 ) {
     const { PoliciesService, PermissionsService, RolesService, AccessService } =
@@ -260,22 +260,22 @@ export async function pushRights(
         // Create but without references to any
         // access relations of the origin system.
         // Access table will take care of that below.
-        const initialRolesRes = await rolesService.createMany(
+        await rolesService.createMany(
             initialRolesInput
         );
-        const initialPoliciesRes = await policiesService.createMany(
+        await policiesService.createMany(
             initialPoliciesInput
         );
 
         // Permissions have direct relations to policy ids,
         // mapped above
-        const intitialPermissionsRes = await permissionsService.createMany(
+        await permissionsService.createMany(
             initialPermissionsInput
         );
 
         // Create but without references to any local
         // users of the origin system
-        const initialAccessRes = await accessService.createMany(
+        await accessService.createMany(
             initialAccessInput.map((a) => ({ ...a, user: null }))
         );
 
@@ -286,22 +286,22 @@ export async function pushRights(
          * Can't simply use updateMany here, since
          * it doesn't support separate payloads.
          */
-        const existingRolesRes = await Promise.all(
+        await Promise.all(
             existingRolesInput.map(async (role) => {
                 return await rolesService.updateOne(role.id, role);
             })
         );
-        const existingPoliciesRes = await Promise.all(
+        await Promise.all(
             existingPoliciesInput.map(async (policy) => {
                 return await policiesService.updateOne(policy.id, policy);
             })
         );
-        const existingPermissionsRes = await Promise.all(
+        await Promise.all(
             existingPermissionsInput.map(async (perm) => {
                 return await permissionsService.updateOne(perm.id, perm);
             })
         );
-        const existingAccessRes = await Promise.all(
+        await Promise.all(
             existingAccessInput.map(async (a) => {
                 return await accessService.updateOne(a.id, a);
             })
@@ -312,14 +312,14 @@ export async function pushRights(
          * Delete rights stuff removed from file
          *
          */
-        const deletedRolesRes = await rolesService.deleteMany(rolesToDelete);
-        const deletedPoliciesRes = await policiesService.deleteMany(
+        await rolesService.deleteMany(rolesToDelete);
+        await policiesService.deleteMany(
             policiesToDelete
         );
-        const deletedPermissionsRes = await permissionsService.deleteMany(
+        await permissionsService.deleteMany(
             permissionsToDelete
         );
-        const deletedAccessRes = await accessService.deleteMany(accessToDelete);
+        await accessService.deleteMany(accessToDelete);
     }
 
     // Return the (expected) result,

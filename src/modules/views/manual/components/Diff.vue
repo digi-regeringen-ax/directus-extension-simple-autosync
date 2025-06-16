@@ -20,7 +20,6 @@
                     View what rights objects would be created, updated or
                     deleted.
                 </p>
-                <!-- <p>Note that existing objects will be updated regardless if there are differences.</p> -->
                 <v-button class="sa-button" :disabled="isRightsDisabled" full-width @click="getRightsDiff()">
                     <v-icon name="difference" />
                     <span>{{
@@ -93,7 +92,7 @@
 </template>
 
 <script>
-import { ref, computed } from "vue";
+import { ref } from "vue";
 import { useApi } from "@directus/extensions-sdk";
 
 import { getError, jsonToClipboard, toJson } from "../../../utils.js";

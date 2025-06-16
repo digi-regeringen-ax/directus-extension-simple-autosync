@@ -6,12 +6,11 @@ import * as translations from "../lib/services/translations";
 import * as general from "../lib/services/general";
 
 export default defineHook(
-    async ({ init, action }, { services, getSchema, logger, emitter }) => {
+    async ({ action }, { services, getSchema, logger, emitter }) => {
         const { SchemaService, ServerService } = services;
 
         // Fake admin since this is an internal process
         const accountability = { admin: true };
-        const _schemaService = new SchemaService({ accountability });
         const schema = await getSchema();
         const _serverSchema = new ServerService({
             accountability: { admin: true, user: true },

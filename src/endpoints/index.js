@@ -1,10 +1,5 @@
 import { defineEndpoint } from "@directus/extensions-sdk";
 import {
-    getSyncFilePath,
-    isStringTruthy,
-    LP,
-    getEnvConfig,
-    getVersion,
     API_BASE,
 } from "../lib/helpers.js";
 import generalControllers from "../lib/controllers/general.js";
@@ -30,7 +25,7 @@ export default defineEndpoint({
     handler: async (router, context) => {
         // Use permissions check middleware
         // for all registered routes below
-        router.use(checkPermission(context));
+        router.use(checkPermission());
 
         const {
             configGetController,

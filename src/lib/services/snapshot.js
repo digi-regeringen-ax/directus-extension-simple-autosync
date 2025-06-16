@@ -8,7 +8,7 @@ export async function pushSnapshot(
     schema,
     emitter,
     accountability,
-    dryRun = false,
+    dryRun,
     version
 ) {
     const { SchemaService } = services;

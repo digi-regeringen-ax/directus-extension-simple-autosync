@@ -67,10 +67,10 @@ export async function pushTranslations(
         partitionCreateUpdate(translationsFromFile, currentTranslations);
 
     if (!dryRun) {
-        const initialTranslationsRes = await translationsService.createMany(
+        await translationsService.createMany(
             initialTranslationsInput
         );
-        const existingTranslationsRes = await Promise.all(
+        await Promise.all(
             existingTranslationsInput.map(async (t) => {
                 // Directus effectively only allows us to update value, may be a bug?
                 return await translationsService.updateOne(t.id, pick(t, "value"));
