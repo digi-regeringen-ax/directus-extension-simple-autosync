@@ -7,7 +7,7 @@ import * as general from "../lib/services/general";
 
 export default defineHook(
     async ({ action }, { services, getSchema, logger, emitter }) => {
-        const { SchemaService, ServerService } = services;
+        const { ServerService } = services;
 
         // Fake admin since this is an internal process
         const accountability = { admin: true };
