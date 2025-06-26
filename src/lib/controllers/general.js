@@ -16,9 +16,9 @@ export default (context) => ({
      * Returns various configuration values
      * to be exposed to frontend/user
      *
-     * @param {*} req
-     * @param {*} res
-     * @returns
+     * @param {Object} req
+     * @param {Object} res
+     * @returns {Object} The envconfig, version, filepaths, etc
      */
     configGetController: async (req, res) => {
         try {
@@ -42,9 +42,9 @@ export default (context) => ({
      * Dowload single sync file
      * based on feature/file name
      *
-     * @param {*} req
-     * @param {*} res
-     * @returns
+     * @param {Object} req
+     * @param {Object} res
+     * @returns {Object} The response object with the file download or an error message if the download fails.
      */
     downloadFileGetController: async (req, res) => {
         const version = await getVersion(req, context);
@@ -58,6 +58,12 @@ export default (context) => ({
         }
     },
 
+    /**
+     * 
+     * @param {Object} req 
+     * @param {Object} res 
+     * @returns { snapshot: Object, rights: Object|undefined, translations: Object|undefined, success: Boolean, error?: Error }
+     */
     triggerPullPostController: async (req, res) => {
         try {
             const pullRes = await pullSyncFiles(

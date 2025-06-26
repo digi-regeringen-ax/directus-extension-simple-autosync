@@ -14,8 +14,8 @@ export default (context) => ({
     /**
      * Retrieve the current translations from database
      *
-     * @param {*} req
-     * @param {*} res
+     * @param {Object} req
+     * @param {Object} res
      * @returns { translations: Object, success: Boolean, error?: Error }
      */
     currentTranslationsGetController: async (req, res) => {
@@ -45,7 +45,7 @@ export default (context) => ({
      * expected diff
      *
      * @param { dry_run } req
-     * @param {*} res
+     * @param {Object} res
      * @returns { translations: Object, success: Boolean, error?: Error }
      */
     triggerPushTranslationsPostController: async (req, res) => {

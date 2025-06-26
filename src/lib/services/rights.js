@@ -10,6 +10,17 @@ import {
     partitionCreateUpdate,
 } from "../helpers.js";
 
+/**
+ * Pulls the current rights setup from the Directus services and saves it to a file.
+ * @async
+ * @param {Object} services - The services object containing PoliciesService, PermissionsService, RolesService, and AccessService.
+ * @param {Object} schema - The schema object.
+ * @param {Object} emitter - The event emitter for filtering data.
+ * @param {Object} accountability - The accountability object for services.
+ * @param {string} version - The currently running Directus version.
+ * @param {string} currentTimeStamp - The timestamp for the rights file.
+ * @returns {Promise<Object>} The rights data that was saved to the file.
+ */
 export async function pullRights(
     services,
     schema,
@@ -42,6 +53,18 @@ export async function pullRights(
     return rightsData;
 }
 
+/**
+ * Pushes the rights setup from a file to the Directus services.
+ * @async
+ * @param {Object} services - The services object containing PoliciesService, PermissionsService, RolesService, and AccessService.
+ * @param {Object} schema - The schema object.
+ * @param {Object} emitter - The event emitter for filtering data.
+ * @param {Object} accountability - The accountability object for services.
+ * @param {boolean} dryRun - If true, the function will not apply changes.
+ * @param {string} version - The currently running Directus version.
+ * @returns {Promise<Object>} An object detailing the changes made to roles, policies, permissions, and access.
+ * @throws {Error} If rights functionality is not enabled.
+ */
 export async function pushRights(
     services,
     schema,
@@ -260,18 +283,12 @@ export async function pushRights(
         // Create but without references to any
         // access relations of the origin system.
         // Access table will take care of that below.
-        await rolesService.createMany(
-            initialRolesInput
-        );
-        await policiesService.createMany(
-            initialPoliciesInput
-        );
+        await rolesService.createMany(initialRolesInput);
+        await policiesService.createMany(initialPoliciesInput);
 
         // Permissions have direct relations to policy ids,
         // mapped above
-        await permissionsService.createMany(
-            initialPermissionsInput
-        );
+        await permissionsService.createMany(initialPermissionsInput);
 
         // Create but without references to any local
         // users of the origin system
@@ -313,18 +330,14 @@ export async function pushRights(
          *
          */
         await rolesService.deleteMany(rolesToDelete);
-        await policiesService.deleteMany(
-            policiesToDelete
-        );
-        await permissionsService.deleteMany(
-            permissionsToDelete
-        );
+        await policiesService.deleteMany(policiesToDelete);
+        await permissionsService.deleteMany(permissionsToDelete);
         await accessService.deleteMany(accessToDelete);
     }
 
     // Return the (expected) result,
     // but only include some props
-    // for breivety
+    // for brevity
     return {
         roles: {
             created: initialRolesInput.map((r) =>
@@ -361,6 +374,16 @@ export async function pushRights(
     };
 }
 
+/**
+ * Retrieves the current rights setup from the Directus services.
+ * @async
+ * @param {Object} policiesService - The policies service instance.
+ * @param {Object} permissionsService - The permissions service instance.
+ * @param {Object} rolesService - The roles service instance.
+ * @param {Object} accessService - The access service instance.
+ * @param {Object} emitter - The event emitter for filtering data.
+ * @returns {Promise<Object>} An object containing the current policies, permissions, roles, and access.
+ */
 export async function getCurrentRightsSetup(
     policiesService,
     permissionsService,
@@ -396,7 +419,9 @@ export async function getCurrentRightsSetup(
     const roles = await rolesService.readByQuery({
         limit: -1,
     });
-    let filteredRoles = roles.map((role) => omit(role, ["policies", "users", "children"]));
+    let filteredRoles = roles.map((role) =>
+        omit(role, ["policies", "users", "children"])
+    );
     filteredRoles = await emitter.emitFilter(`${HP}.roles.pull`, filteredRoles);
 
     const access = await accessService.readByQuery({
@@ -439,8 +464,8 @@ const DEFAULT_ID_PLACEHOLDERS = {
     publicRelation: "_default-public-relation",
 };
 
-// TODO figure out better ways to accuratly determine defaults?
-// As of know, defaults identification relies on that
+// TODO figure out better ways to accurately determine defaults?
+// As of now, defaults identification relies on that
 // you've left the default's (admin/public) metadata untouched.
 // Note that nothing will break if you add custom permissions
 // to the default policies etc.
@@ -457,6 +482,11 @@ const isDefaultAdminRole = (role) =>
     (role.description === "$t:admin_description" &&
         role.name === "Administrator");
 
+/**
+ * Rewrites default IDs in the rights data to placeholder IDs.
+ * @param {Object} currentRightsData - The current rights data.
+ * @returns {Object} The rights data with default IDs rewritten to placeholder IDs.
+ */
 function rewriteDefaultsToPlaceholderIds(currentRightsData) {
     let defaultAdminPolicyOriginalId;
     let defaultPublicPolicyOriginalId;

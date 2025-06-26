@@ -11,8 +11,8 @@ export default (context) => ({
     /**
      * Retrieve the snapshot from database
      *
-     * @param {*} req
-     * @param {*} res
+     * @param {Object} req
+     * @param {Object} res
      * @returns { snapshot: Object, success: Boolean, error?: Error }
      */
     currentSnapshotGetController: async (req, res) => {
@@ -38,7 +38,7 @@ export default (context) => ({
      * expected diff
      *
      * @param { dry_run } req
-     * @param {*} res
+     * @param {Object} res
      * @returns { diff: Object, success: Boolean, error?: Error }
      */
     triggerPushSnapshotPostController: async (req, res) => {

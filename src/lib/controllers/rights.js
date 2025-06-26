@@ -5,8 +5,8 @@ export default (context) => ({
     /**
      * Retrieve the current rights (policies, roles, permissions, access) from database
      *
-     * @param {*} req
-     * @param {*} res
+     * @param {Object} req
+     * @param {Object} res
      * @returns { rights: Object, success: Boolean, error?: Error }
      */
     currentRightsGetController: async (req, res) => {
@@ -56,7 +56,7 @@ export default (context) => ({
      * expected diff
      *
      * @param { dry_run } req
-     * @param {*} res
+     * @param {Object} res
      * @returns { rights: Object, success: Boolean, error?: Error }
      */
     triggerPushRightsPostController: async (req, res) => {

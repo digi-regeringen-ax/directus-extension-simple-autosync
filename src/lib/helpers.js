@@ -4,6 +4,13 @@ import isEqual from "lodash/isequal";
 import partition from "lodash/partition";
 import omit from "lodash/omit";
 
+/**
+ * Retrieves the version of the Directus instance/server.
+ * @async
+ * @param {Object} req - The request object containing accountability and schema.
+ * @param {Object} context - The context object containing services.
+ * @returns {Promise<string>} The currently running Directus version.
+ */
 export async function getVersion(req, context) {
     const { ServerService } = context.services;
 
@@ -15,6 +22,13 @@ export async function getVersion(req, context) {
     return data.version;
 }
 
+/**
+ * Gets the file path for a sync file based on the file type, version, and timestamp.
+ * @param {string} file - The type of file (e.g., 'snapshot', 'rights').
+ * @param {string} [version="unknown"] - The currently running Directus version.
+ * @param {string} [timestamp=""] - The timestamp for the file.
+ * @returns {string} The file path for the sync file.
+ */
 export function getSyncFilePath(file, version = "unknown", timestamp = "") {
     const { AUTOSYNC_FILE_PATH: dir, AUTOSYNC_MULTIFILE } = getEnvConfig();
     let filename;
@@ -33,10 +47,12 @@ export function getSyncFilePath(file, version = "unknown", timestamp = "") {
 }
 
 /**
- *
  * Get a list of snapshot files, filtered to the given version.
- *
  * Only applicable when running in multi-file mode.
+ * @param {string} file - The type of file (e.g., 'snapshot', 'rights').
+ * @param {string} version - The currently running Directus version.
+ * @param {string} [sortDir="DESC"] - The direction to sort the files.
+ * @returns {Array<string>} A list of file names matching the version.
  */
 export function getSyncFilesForVersion(file, version, sortDir = "DESC") {
     const dir = getEnvConfig().AUTOSYNC_FILE_PATH;
@@ -55,18 +71,31 @@ export function getSyncFilesForVersion(file, version, sortDir = "DESC") {
     return files;
 }
 
+/**
+ * Checks if a string is truthy.
+ * @param {string} str - The string to check.
+ * @returns {boolean} True if the string is truthy, false otherwise.
+ */
 export function isStringTruthy(str) {
     return ![undefined, null, "", "0", "no", "false"].includes(
         str?.toLowerCase()
     );
 }
 
+/**
+ * Gets the current timestamp in a formatted string.
+ * @returns {string} The current timestamp.
+ */
 export function getCurrentTimestamp() {
     const now = new Date();
     const timestamp = now.toISOString().replace(/[-:]/g, "").split(".")[0];
     return timestamp;
 }
 
+/**
+ * Retrieves the environment configuration for autosync.
+ * @returns {Object} The environment configuration.
+ */
 export function getEnvConfig() {
     const defaultAutosyncFilepath = `${process.cwd()}/autosync-config`;
     const autosyncFilepath =
@@ -86,16 +115,32 @@ export function getEnvConfig() {
     };
 }
 
+/**
+ * Writes an object to a JSON file.
+ * @param {string} filePath - The path to the file.
+ * @param {Object} obj - The object to write to the file.
+ */
 export function writeJson(filePath, obj) {
     const json = JSON.stringify(obj, null, 4);
     fs.writeFileSync(filePath, json, { flag: "w" });
 }
 
+/**
+ * Reads a JSON file and parses its contents.
+ * @param {string} filePath - The path to the file.
+ * @returns {Object} The parsed JSON object.
+ */
 export function readJson(filePath) {
     const snapshot = fs.readFileSync(filePath);
     return JSON.parse(snapshot);
 }
 
+/**
+ * Partitions an array of objects into those that need to be created and those that need to be updated.
+ * @param {Array<Object>} fromFiles - The array of objects from files.
+ * @param {Array<Object>} fromCurrent - The array of current objects.
+ * @returns {Array<Array<Object>>} An array containing two arrays: objects to create and objects to update.
+ */
 export function partitionCreateUpdate(fromFiles, fromCurrent) {
     // If an ID already exists in database,
     // set to update it. Otherwise it will
@@ -119,10 +164,23 @@ export function partitionCreateUpdate(fromFiles, fromCurrent) {
     ];
 }
 
+/**
+ * Sends a JSON success response.
+ * @param {Object} res - The response object.
+ * @param {Object} data - The data to include in the response.
+ * @param {number} [status=200] - The HTTP status code.
+ * @returns {Object} The response object with the success status and data.
+ */
 export function jsonSuccessResponse(res, data, status = 200) {
     return res.status(status).json({ success: true, error: null, ...data });
 }
 
+/**
+ * Sends a JSON error response.
+ * @param {Object} res - The response object.
+ * @param {Error} error - The error to include in the response.
+ * @returns {Object} The response object with the error status and message.
+ */
 export function jsonErrorResponse(res, error) {
     const status = error.status ? error.status : 500;
     return res.status(status).json({ success: false, error });

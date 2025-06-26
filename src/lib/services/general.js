@@ -1,11 +1,15 @@
 import fs from "node:fs";
 import { getEnvConfig, getSyncFilePath, getCurrentTimestamp } from "../helpers";
 
-
 import { pullTranslations } from "./translations";
 import { pullRights } from "./rights";
 import { pullSnapshot } from "./snapshot";
 
+/**
+ * Retrieves file paths for snapshots, rights, and translations based on the version.
+ * @param {string} version - The Directus version for which to retrieve file paths.
+ * @returns {Object} An object containing file paths for snapshots, rights, and translations.
+ */
 export function getFilePaths(version) {
     const envConfig = getEnvConfig();
 
@@ -52,21 +56,23 @@ export function getFilePaths(version) {
     };
 }
 
-
 /**
- *
- * Perform a write of current data
- * to each feature sync file
- * at the same time, with the
- * same timestamp
- *
- * @param {*} services
- * @param {*} schema
- * @param {*} accountability
- * @param {*} version
- * @returns
+ * Perform a write of current data to each feature sync file at the same time, with the same timestamp.
+ * @async
+ * @param {Object} services - The services object.
+ * @param {Object} schema - The schema object.
+ * @param {Object} emitter - The event emitter for filtering snapshots.
+ * @param {Object} accountability - The accountability object for schema service.
+ * @param {string} version - The currently running Directus version.
+ * @returns {Promise<Object>} An object containing the results of pulling snapshots, rights, and translations.
  */
-export async function pullSyncFiles(services, schema, emitter, accountability, version) {
+export async function pullSyncFiles(
+    services,
+    schema,
+    emitter,
+    accountability,
+    version
+) {
     const envConfig = getEnvConfig();
     const currentTimeStamp = getCurrentTimestamp();
     const snapshot = await pullSnapshot(
