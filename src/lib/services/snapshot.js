@@ -1,6 +1,3 @@
-import path from "node:path";
-import fs from "node:fs";
-
 import { getSyncFilePath, readJson, writeJson, HP } from "../helpers.js";
 
 /**
@@ -68,11 +65,6 @@ export async function pullSnapshot(
 
     const filePath = getSyncFilePath("snapshot", version, currentTimestamp);
 
-    const dir = path.dirname(filePath);
-    if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir, { recursive: true });
-    }
-
     writeJson(filePath, snapshot);
 
     return snapshot;
@@ -87,9 +79,8 @@ export async function pullSnapshot(
  */
 export async function getCurrentSnapshot(schemaService, emitter) {
     const snapshot = await schemaService.snapshot();
-    const filteredSnapshot = await emitter.emitFilter(
+    return await emitter.emitFilter(
         `${HP}.snapshot.pull`,
         snapshot
     );
-    return filteredSnapshot;
 }

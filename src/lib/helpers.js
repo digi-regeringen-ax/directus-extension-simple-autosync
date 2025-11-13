@@ -88,8 +88,7 @@ export function isStringTruthy(str) {
  */
 export function getCurrentTimestamp() {
     const now = new Date();
-    const timestamp = now.toISOString().replace(/[-:]/g, "").split(".")[0];
-    return timestamp;
+    return now.toISOString().replace(/[-:]/g, "").split(".")[0];
 }
 
 /**
@@ -121,6 +120,11 @@ export function getEnvConfig() {
  * @param {Object} obj - The object to write to the file.
  */
 export function writeJson(filePath, obj) {
+    const dir = path.dirname(filePath);
+    if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+    }
+
     const json = JSON.stringify(obj, null, 4);
     fs.writeFileSync(filePath, json, { flag: "w" });
 }
