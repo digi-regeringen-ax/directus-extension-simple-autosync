@@ -16,8 +16,11 @@ export default (context) => ({
      * @returns { snapshot: Object, success: Boolean, error?: Error }
      */
     currentSnapshotGetController: async (req, res) => {
-        const { SchemaService } = services;
-        const schemaService = new SchemaService({ accountability, schema });
+        const { SchemaService } = context.services;
+        const schemaService = new SchemaService({
+            accountability: req.accountability,
+            schema: req.schema,
+        });
 
         try {
             const snapshot = await getCurrentSnapshot(
