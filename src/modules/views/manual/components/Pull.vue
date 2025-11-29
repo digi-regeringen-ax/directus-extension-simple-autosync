@@ -27,7 +27,9 @@
                 <v-icon name="save_as" />
                 <span>Write file(s)</span>
             </v-button>
-            <p v-if="pullMsg">{{ pullMsg }}</p>
+            <pre
+                v-if="pullMsg"
+                :class="{ 'error-message': pullMsg.startsWith('⚠️') }">{{ pullMsg }}</pre>
         </div>
     </div>
 </template>
@@ -125,5 +127,21 @@ export default {
 <style scoped>
 .collList {
     margin-bottom: 18px;
+}
+
+.error-message {
+    margin-top: 12px;
+    padding: 12px;
+    background-color: var(--theme--background-subdued, #f5f5f5);
+    border: 1px solid var(--theme--border-color-subdued, #e0e0e0);
+    border-radius: 4px;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 13px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    color: var(--theme--foreground, #333);
+    max-height: 400px;
+    overflow-y: auto;
 }
 </style>

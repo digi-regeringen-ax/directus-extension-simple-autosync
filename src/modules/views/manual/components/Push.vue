@@ -11,7 +11,9 @@
                     <v-icon name="upload" />
                     <span>Apply snaphot file</span>
                 </v-button>
-                <p v-if="pushMsg">{{ pushMsg }}</p>
+                <pre
+                    v-if="pushMsg"
+                    :class="{ 'error-message': pushMsg.startsWith('⚠️') }">{{ pushMsg }}</pre>
             </div>
             <div :class="colClassName" v-if="showRights">
                 <h3 class="small-heading">Rights</h3>
@@ -23,7 +25,9 @@
                     <v-icon name="upload" />
                     <span>Apply rights file</span>
                 </v-button>
-                <p v-if="pushRightsMsg">{{ pushRightsMsg }}</p>
+                <pre
+                    v-if="pushRightsMsg"
+                    :class="{ 'error-message': pushRightsMsg.startsWith('⚠️') }">{{ pushRightsMsg }}</pre>
             </div>
             <div :class="colClassName" v-if="showTranslations">
                 <h3 class="small-heading">Translations</h3>
@@ -35,7 +39,9 @@
                     <v-icon name="upload" />
                     <span>Apply translations file</span>
                 </v-button>
-                <p v-if="pushTranslationsMsg">{{ pushTranslationsMsg }}</p>
+                <pre
+                    v-if="pushTranslationsMsg"
+                    :class="{ 'error-message': pushTranslationsMsg.startsWith('⚠️') }">{{ pushTranslationsMsg }}</pre>
             </div>
         </div>
     </div>
@@ -125,3 +131,21 @@ export default {
     },
 };
 </script>
+
+<style scoped>
+.error-message {
+    margin-top: 12px;
+    padding: 12px;
+    background-color: var(--theme--background-subdued, #f5f5f5);
+    border: 1px solid var(--theme--border-color-subdued, #e0e0e0);
+    border-radius: 4px;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 13px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    color: var(--theme--foreground, #333);
+    max-height: 400px;
+    overflow-y: auto;
+}
+</style>
