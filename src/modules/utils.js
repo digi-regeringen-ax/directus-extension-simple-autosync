@@ -105,7 +105,7 @@ export function toJson(obj) {
             // Handle objects
             const result = {};
             for (const key in value) {
-                if (Object.prototype.hasOwnProperty.call(value, key)) {
+                if (Object.hasOwn(value, key)) {
                     result[key] = serialize(value[key]);
                 }
             }
