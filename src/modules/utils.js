@@ -124,6 +124,8 @@ export function toJson(obj) {
         return JSON.stringify(serialized, null, "\t");
     } catch (e) {
         // Fallback if serialization still fails
+        // Log the error for debugging purposes
+        console.error("Failed to serialize object:", e);
         return String(obj);
     }
 }
