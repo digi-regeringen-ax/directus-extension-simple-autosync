@@ -2,51 +2,68 @@ export async function jsonToClipboard(obj) {
     navigator.clipboard.writeText(toJson(obj));
 }
 
+function extractErrorMessageFromError(error) {
+    // Priority 1: Database errors - sqlMessage is cleanest
+    if (error.sqlMessage) {
+        return error.sqlMessage;
+    }
+
+    // Priority 2: Extract meaningful part from message
+    if (error.message) {
+        if (typeof error.message === "string" && error.message.includes(" - ")) {
+            const parts = error.message.split(" - ");
+            return parts[parts.length - 1];
+        }
+        return String(error.message);
+    }
+
+    // Priority 3: Directus error format
+    if (error.extensions?.reason) {
+        return error.extensions.reason;
+    }
+
+    // Priority 4: Error code with message
+    if (error.code) {
+        return `Error ${error.code}: ${error.message || "An error occurred"}`;
+    }
+
+    // Priority 5: Error as string
+    if (typeof error === "string") {
+        return error;
+    }
+
+    // Priority 6: Fallback
+    return JSON.stringify(error);
+}
+
+function extractErrorMessageFromResponse(responseData) {
+    if (responseData.error) {
+        return {
+            message: extractErrorMessageFromError(responseData.error),
+            fullError: responseData.error
+        };
+    }
+
+    if (responseData.message) {
+        return {
+            message: responseData.message,
+            fullError: responseData
+        };
+    }
+
+    return null;
+}
+
 export function getError(e) {
     const prefix = "⚠️ Failed: ";
     let errorMessage = "unknown reason";
     let fullErrorObject = null;
 
     if (e.response?.data) {
-        const data = e.response.data;
-
-        if (data.error) {
-            const error = data.error;
-            fullErrorObject = error; // Store for detailed log
-
-            // Priority 1: Database errors - sqlMessage is cleanest
-            if (error.sqlMessage) {
-                errorMessage = error.sqlMessage;
-            }
-            // Priority 2: Extract meaningful part from message
-            else if (error.message) {
-                if (typeof error.message === "string" && error.message.includes(" - ")) {
-                    const parts = error.message.split(" - ");
-                    errorMessage = parts[parts.length - 1];
-                } else {
-                    errorMessage = String(error.message);
-                }
-            }
-            // Priority 3: Directus error format
-            else if (error.extensions?.reason) {
-                errorMessage = error.extensions.reason;
-            }
-            // Priority 4: Error code with message
-            else if (error.code) {
-                errorMessage = `Error ${error.code}: ${error.message || "An error occurred"
-                    }`;
-            }
-            // Priority 5: Error as string
-            else if (typeof error === "string") {
-                errorMessage = error;
-            }
-            // Priority 6: Fallback
-            else {
-                errorMessage = JSON.stringify(error);
-            }
-        } else if (data.message) {
-            errorMessage = data.message;
-            fullErrorObject = data;
+        const extracted = extractErrorMessageFromResponse(e.response.data);
+        if (extracted) {
+            errorMessage = extracted.message;
+            fullErrorObject = extracted.fullError;
         }
     } else if (e.message) {
         errorMessage = e.message;
