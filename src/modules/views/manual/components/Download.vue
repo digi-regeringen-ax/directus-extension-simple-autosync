@@ -17,6 +17,22 @@
                 <span>Download snapshot</span>
             </v-button>
         </div>
+        <div :class="colClassName">
+            <h3 class="small-heading">System collection schema</h3>
+            <p>
+                Download the snapshot containing only schema customizations on
+                <code>directus_*</code> collections.
+            </p>
+            <v-button
+                class="sa-button"
+                :disabled="isSystemSnapshotDisabled"
+                full-width
+                :href="systemSnapshotDownloadLink"
+            >
+                <v-icon name="download" />
+                <span>Download system schema snapshot</span>
+            </v-button>
+        </div>
         <div :class="colClassName" v-if="showRights">
             <h3 class="small-heading">Rights</h3>
             <p>
@@ -67,6 +83,9 @@ export default {
         const rightsDownloadLink = computed(
             () => `${props.config.apiBaseUrl}/download/rights`
         );
+        const systemSnapshotDownloadLink = computed(
+            () => `${props.config.apiBaseUrl}/download/system-snapshot`
+        );
         const translationsDownloadLink = computed(
             () => `${props.config.apiBaseUrl}/download/translations`
         );
@@ -75,9 +94,12 @@ export default {
             showRights: props.config.AUTOSYNC_INCLUDE_RIGHTS,
             showTranslations: props.config.AUTOSYNC_INCLUDE_TRANSLATIONS,
             isSnapshotDisabled: !props.config.filepaths.latestSnapshot,
+            isSystemSnapshotDisabled:
+                !props.config.filepaths.latestSystemSnapshot,
             isRightsDisabled: !props.config.filepaths.latestRights, // TODO varför uppdateras inte detta efter emit get config
             isTranslationsDisabled: !props.config.filepaths.latestTranslations, // TODO varför uppdateras inte detta efter emit get config
             snapshotDownloadLink,
+            systemSnapshotDownloadLink,
             rightsDownloadLink,
             translationsDownloadLink,
 

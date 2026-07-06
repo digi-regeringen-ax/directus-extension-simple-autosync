@@ -13,6 +13,24 @@
                 </v-button>
                 <p v-if="pushMsg">{{ pushMsg }}</p>
             </div>
+            <div :class="colClassName">
+                <h3 class="small-heading">System collection schema</h3>
+                <p>
+                    Apply only schema customizations owned by
+                    <code>directus_*</code> collections. Custom collections and
+                    system-table rows are not changed.
+                </p>
+                <v-button
+                    class="sa-button"
+                    :disabled="isSystemSnapshotDisabled"
+                    full-width
+                    @click="applySystemSnapshot()"
+                >
+                    <v-icon name="upload" />
+                    <span>Apply system schema snapshot</span>
+                </v-button>
+                <p v-if="pushSystemMsg">{{ pushSystemMsg }}</p>
+            </div>
             <div :class="colClassName" v-if="showRights">
                 <h3 class="small-heading">Rights</h3>
                 <p>
@@ -55,6 +73,7 @@ export default {
 
         const { config } = props;
         const pushMsg = ref("");
+        const pushSystemMsg = ref("");
         const pushRightsMsg = ref("");
         const pushTranslationsMsg = ref("");
 
@@ -71,6 +90,27 @@ export default {
                     })
                     .catch((e) => {
                         pushMsg.value = getError(e);
+                        console.log("e", e);
+                    });
+            }
+        }
+
+        async function applySystemSnapshot() {
+            const warning =
+                "Apply the system collection schema snapshot? Existing custom fields on system collections that are absent from the file may be removed.";
+            if (confirm(warning)) {
+                pushSystemMsg.value = "";
+                api.post(
+                    `${config.apiBaseUrl}/trigger/push-system-snapshot`,
+                    { dry_run: false }
+                )
+                    .then((result) => {
+                        pushSystemMsg.value = result.data.diff
+                            ? "Successfully applied system schema snapshot!"
+                            : "No differences to apply!";
+                    })
+                    .catch((e) => {
+                        pushSystemMsg.value = getError(e);
                         console.log("e", e);
                     });
             }
@@ -112,12 +152,16 @@ export default {
             showRights: config.AUTOSYNC_INCLUDE_RIGHTS,
             showTranslations: config.AUTOSYNC_INCLUDE_TRANSLATIONS,
             isSnapshotDisabled: !config.filepaths.latestSnapshot,
+            isSystemSnapshotDisabled:
+                !config.filepaths.latestSystemSnapshot,
             isRightsDisabled: !config.filepaths.latestRights,
             isTranslationsDisabled: !config.filepaths.latestTranslations,
             pushMsg,
+            pushSystemMsg,
             pushRightsMsg,
             pushTranslationsMsg,
             applySnapshot,
+            applySystemSnapshot,
             applyRights,
             applyTranslations,
 

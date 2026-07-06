@@ -33,6 +33,18 @@ export function getFilePaths(version) {
     );
     const latestSnapshotFilepath = getSyncFilePath("snapshot", version);
     const latestSnapshotExists = fs.existsSync(latestSnapshotFilepath);
+    const systemSnapshotExampleFilepath = getSyncFilePath(
+        "system-snapshot",
+        versionPlaceholder,
+        timestampPlaceholder
+    );
+    const latestSystemSnapshotFilepath = getSyncFilePath(
+        "system-snapshot",
+        version
+    );
+    const latestSystemSnapshotExists = fs.existsSync(
+        latestSystemSnapshotFilepath
+    );
 
     const latestRightsFilepath = getSyncFilePath("rights", version);
     const latestRightsExists = fs.existsSync(latestRightsFilepath);
@@ -42,6 +54,7 @@ export function getFilePaths(version) {
 
     return {
         snapshot: snapshotExampleFilepath,
+        systemSnapshot: systemSnapshotExampleFilepath,
         rights: envConfig.AUTOSYNC_INCLUDE_RIGHTS
             ? rightsExampleFilepath
             : null,
@@ -49,6 +62,9 @@ export function getFilePaths(version) {
             ? translationsExampleFilepath
             : null,
         latestSnapshot: latestSnapshotExists ? latestSnapshotFilepath : null,
+        latestSystemSnapshot: latestSystemSnapshotExists
+            ? latestSystemSnapshotFilepath
+            : null,
         latestRights: latestRightsExists ? latestRightsFilepath : null,
         latestTranslations: latestTranslationsExists
             ? latestTranslationsFilepath

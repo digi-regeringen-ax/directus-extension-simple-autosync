@@ -1,11 +1,16 @@
 import {
     isStringTruthy,
     getVersion,
+    getCurrentTimestamp,
     LP,
     jsonSuccessResponse,
     jsonErrorResponse,
 } from "../helpers";
-import { pushSnapshot, getCurrentSnapshot } from "../services/snapshot";
+import {
+    pushSnapshot,
+    pullSnapshot,
+    getCurrentSnapshot,
+} from "../services/snapshot";
 
 export default (context) => ({
     /**
@@ -16,8 +21,11 @@ export default (context) => ({
      * @returns { snapshot: Object, success: Boolean, error?: Error }
      */
     currentSnapshotGetController: async (req, res) => {
-        const { SchemaService } = services;
-        const schemaService = new SchemaService({ accountability, schema });
+        const { SchemaService } = context.services;
+        const schemaService = new SchemaService({
+            accountability: req.accountability,
+            schema: req.schema,
+        });
 
         try {
             const snapshot = await getCurrentSnapshot(
@@ -27,6 +35,25 @@ export default (context) => ({
             return jsonSuccessResponse(res, { snapshot });
         } catch (e) {
             context.logger.error(e, `${LP} current/snapshot`);
+            return jsonErrorResponse(res, e);
+        }
+    },
+    triggerPullSystemSnapshotPostController: async (req, res) => {
+        const version = await getVersion(req, context);
+
+        try {
+            const snapshot = await pullSnapshot(
+                context.services,
+                req.schema,
+                context.emitter,
+                req.accountability,
+                version,
+                getCurrentTimestamp(),
+                true
+            );
+            return jsonSuccessResponse(res, { snapshot });
+        } catch (e) {
+            context.logger.error(e, `${LP} trigger/pull-system-snapshot`);
             return jsonErrorResponse(res, e);
         }
     },
@@ -65,6 +92,27 @@ export default (context) => ({
             return jsonSuccessResponse(res, { diff });
         } catch (e) {
             context.logger.error(e, `${LP} trigger/push-snapshot`);
+            return jsonErrorResponse(res, e);
+        }
+    },
+    triggerPushSystemSnapshotPostController: async (req, res) => {
+        const dryRunParam = (req.body?.dry_run || "") + "";
+        const dryRun = isStringTruthy(dryRunParam);
+        const version = await getVersion(req, context);
+
+        try {
+            const diff = await pushSnapshot(
+                context.services,
+                req.schema,
+                context.emitter,
+                req.accountability,
+                dryRun,
+                version,
+                true
+            );
+            return jsonSuccessResponse(res, { diff });
+        } catch (e) {
+            context.logger.error(e, `${LP} trigger/push-system-snapshot`);
             return jsonErrorResponse(res, e);
         }
     },

@@ -35,6 +35,8 @@ export default defineEndpoint({
         const {
             currentSnapshotGetController,
             triggerPushSnapshotPostController,
+            triggerPullSystemSnapshotPostController,
+            triggerPushSystemSnapshotPostController,
         } = snapshotControllers(context);
         const { currentRightsGetController, triggerPushRightsPostController } =
             rightsControllers(context);
@@ -53,6 +55,14 @@ export default defineEndpoint({
         router.post(
             "/trigger/push-snapshot",
             triggerPushSnapshotPostController
+        );
+        router.post(
+            "/trigger/pull-system-snapshot",
+            triggerPullSystemSnapshotPostController
+        );
+        router.post(
+            "/trigger/push-system-snapshot",
+            triggerPushSystemSnapshotPostController
         );
 
         // Rights endpoints
