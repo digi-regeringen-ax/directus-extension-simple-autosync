@@ -28,6 +28,21 @@
                 <span>Write file(s)</span>
             </v-button>
             <p v-if="pullMsg">{{ pullMsg }}</p>
+            <h3 class="small-heading">System collection schema only</h3>
+            <p>
+                Write a separate snapshot containing only schema definitions
+                owned by <code>directus_*</code> collections. No table rows are
+                exported.
+            </p>
+            <v-button
+                class="sa-button"
+                full-width
+                @click="pullSystemSnapshot()"
+            >
+                <v-icon name="save_as" />
+                <span>Write system schema snapshot</span>
+            </v-button>
+            <p v-if="systemPullMsg">{{ systemPullMsg }}</p>
         </div>
     </div>
 </template>
@@ -55,6 +70,7 @@ export default {
         const currentPolicies = ref(null);
         const currentTranslations = ref(null);
         const pullMsg = ref("");
+        const systemPullMsg = ref("");
 
         const { useCollectionsStore } = useStores();
 
@@ -107,6 +123,20 @@ export default {
             }
         }
 
+        async function pullSystemSnapshot() {
+            systemPullMsg.value = "";
+            api.post(`${config.apiBaseUrl}/trigger/pull-system-snapshot`)
+                .then(() => {
+                    systemPullMsg.value =
+                        "Successfully wrote system schema snapshot!";
+                    emit("updateEnvConfig");
+                })
+                .catch((e) => {
+                    systemPullMsg.value = getError(e);
+                    console.log("e", e);
+                });
+        }
+
         return {
             collections,
             showRights: config.AUTOSYNC_INCLUDE_RIGHTS,
@@ -116,7 +146,9 @@ export default {
             currentPolicies,
             currentTranslations,
             pullMsg,
+            systemPullMsg,
             pullFiles,
+            pullSystemSnapshot,
         };
     },
 };

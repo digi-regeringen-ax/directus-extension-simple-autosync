@@ -104,6 +104,20 @@ To get things sorted, download a snapshot file from your existing environment us
 Apart from the automatic sync, this extension also includes a UI with some tools for convinient snapshot handling.
 Activate the module "Simple autosync manual actions" in your Directus project settings.
 
+### System collection schema snapshots
+
+The manual UI can write, download, diff, and apply a separate
+`system-snapshot.json` file (or a versioned `system-snapshot_*.json` file when
+multi-file mode is enabled). This snapshot contains only schema definitions
+owned by collections whose names start with `directus_`.
+
+Use this when you add custom fields or relations to Directus system
+collections and want to move those schema changes between environments. It
+does not export or import any rows from system tables. Applying the file does
+not change custom collection schemas, but it can remove custom system
+collection fields that are absent from the system snapshot; inspect the diff
+before applying it.
+
 ## Dealing with versions
 Snapshots are version-specific, meaning that you cannot apply a snapshot to an Directus installation that runs a newer version than the snapshot references. When upgrading your Directus installation locally, keep your snapshot in sync like so:
 1. Before upgrading, make sure that your database is synced with your latest snapshot file. Use "Diff" and "Manual push" functions to make sure.

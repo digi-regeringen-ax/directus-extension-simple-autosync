@@ -37,6 +37,12 @@
                                 config.filepaths.snapshot
                             }}</span>
                         </li>
+                        <li>
+                            System collection schema filepath is
+                            <span class="bold">{{
+                                config.filepaths.systemSnapshot
+                            }}</span>
+                        </li>
                         <li v-if="config.filepaths.rights">
                             Rights filepath is
                             <span class="bold">{{
@@ -64,6 +70,14 @@
                             <span class="bold"
                                 >⚠ There is no data model snapshot on disk for
                                 this version ({{ config.version }}).</span
+                            >
+                        </li>
+                        <li v-if="!config.filepaths.latestSystemSnapshot">
+                            <span class="bold"
+                                >⚠ There is no system collection schema
+                                snapshot on disk for this version ({{
+                                    config.version
+                                }}).</span
                             >
                         </li>
                         <li

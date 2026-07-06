@@ -14,6 +14,27 @@
                 </v-button>
                 <p v-if="diffMsg">{{ diffMsg }}</p>
             </div>
+            <div :class="colClassName">
+                <h3 class="small-heading">System collection schema</h3>
+                <p>
+                    View schema differences limited to
+                    <code>directus_*</code> collections.
+                </p>
+                <v-button
+                    class="sa-button"
+                    :disabled="isSystemSnapshotDisabled"
+                    full-width
+                    @click="getSystemDiff()"
+                >
+                    <v-icon name="difference" />
+                    <span>{{
+                        systemDiff
+                            ? "Hide system schema diff"
+                            : "Show system schema diff"
+                    }}</span>
+                </v-button>
+                <p v-if="systemDiffMsg">{{ systemDiffMsg }}</p>
+            </div>
             <div :class="colClassName" v-if="showRights">
                 <h3 class="small-heading">Rights</h3>
                 <p>
@@ -74,6 +95,23 @@
                 <pre>{{ toJson(rightsDiff) }}</pre>
             </div>
         </div>
+        <div class="form-grid" v-if="systemDiff">
+            <div class="codebox full">
+                <v-button
+                    kind="primary"
+                    class="diffcopy"
+                    outlined
+                    small
+                    @click="() => jsonToClipboard(systemDiff)"
+                    >Copy to clipboard
+                </v-button>
+                <div class="legend">
+                    <p><span class="bold">lhs</span> = database</p>
+                    <p><span class="bold">rhs</span> = system snapshot file</p>
+                </div>
+                <pre>{{ toJson(systemDiff) }}</pre>
+            </div>
+        </div>
         <div class="form-grid" v-if="translationsDiff">
             <div class="codebox full">
                 <v-button
@@ -107,10 +145,12 @@ export default {
         const api = useApi();
 
         const diff = ref(null);
+        const systemDiff = ref(null);
         const rightsDiff = ref(null);
         const translationsDiff = ref(null);
 
         const diffMsg = ref("");
+        const systemDiffMsg = ref("");
         const rightsDiffMsg = ref("");
         const translationsDiffMsg = ref("");
 
@@ -120,6 +160,8 @@ export default {
 
             diffMsg.value = "";
             diff.value = null;
+            systemDiffMsg.value = "";
+            systemDiff.value = null;
             rightsDiffMsg.value = "";
             rightsDiff.value = null;
             translationsDiffMsg.value = "";
@@ -144,11 +186,43 @@ export default {
                 });
         }
 
+        async function getSystemDiff() {
+            const hasPreviousDiff = !!systemDiff.value;
+
+            diffMsg.value = "";
+            diff.value = null;
+            systemDiffMsg.value = "";
+            systemDiff.value = null;
+            rightsDiffMsg.value = "";
+            rightsDiff.value = null;
+            translationsDiffMsg.value = "";
+            translationsDiff.value = null;
+
+            if (hasPreviousDiff) return;
+
+            api.post(`${config.apiBaseUrl}/trigger/push-system-snapshot`, {
+                dry_run: true,
+            })
+                .then((result) => {
+                    systemDiff.value = result.data.diff;
+                    if (!systemDiff.value) {
+                        systemDiffMsg.value =
+                            "No system schema differences found!";
+                    }
+                })
+                .catch((e) => {
+                    console.log(e);
+                    systemDiffMsg.value = getError(e);
+                });
+        }
+
         async function getRightsDiff() {
             const hasPreviousRightsDiff = !!rightsDiff.value;
 
             diffMsg.value = "";
             diff.value = null;
+            systemDiffMsg.value = "";
+            systemDiff.value = null;
             rightsDiffMsg.value = "";
             rightsDiff.value = null;
             translationsDiffMsg.value = "";
@@ -174,6 +248,8 @@ export default {
 
             diffMsg.value = "";
             diff.value = null;
+            systemDiffMsg.value = "";
+            systemDiff.value = null;
             rightsDiffMsg.value = "";
             rightsDiff.value = null;
             translationsDiffMsg.value = "";
@@ -198,15 +274,20 @@ export default {
             showRights: config.AUTOSYNC_INCLUDE_RIGHTS,
             showTranslations: config.AUTOSYNC_INCLUDE_TRANSLATIONS,
             isSnapshotDisabled: !config.filepaths.latestSnapshot,
+            isSystemSnapshotDisabled:
+                !config.filepaths.latestSystemSnapshot,
             isRightsDisabled: !config.filepaths.latestRights,
             isTranslationsDisabled: !config.filepaths.latestTranslations,
             diff,
+            systemDiff,
             rightsDiff,
             translationsDiff,
             diffMsg,
+            systemDiffMsg,
             rightsDiffMsg,
             translationsDiffMsg,
             getDiff,
+            getSystemDiff,
             getRightsDiff,
             getTranslationsDiff,
             jsonToClipboard,
