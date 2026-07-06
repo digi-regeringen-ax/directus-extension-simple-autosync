@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import isEqual from "lodash/isequal";
+import isEqual from "lodash/isEqual.js";
 import partition from "lodash/partition";
 import omit from "lodash/omit";
 
